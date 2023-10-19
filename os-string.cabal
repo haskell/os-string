@@ -31,6 +31,7 @@ description:
 extra-source-files:
   System/OsString/Common.hs
   tests/bytestring-tests/Properties/Common.hs
+  bench/Common.hs
 
 extra-doc-files:
   changelog.md
@@ -90,3 +91,20 @@ test-suite bytestring-tests
     , os-string
     , QuickCheck  >=2.7      && <2.15
 
+benchmark bench
+  main-is:          Bench.hs
+  other-modules:    BenchOsString
+                    BenchPosixString
+                    BenchWindowsString
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   bench
+  default-language: Haskell2010
+  ghc-options:      -O2 "-with-rtsopts=-A32m"
+  if impl(ghc >= 8.6)
+    ghc-options:    -fproc-alignment=64
+  build-depends:    base,
+                    bytestring,
+                    os-string,
+                    deepseq,
+                    tasty-bench,
+                    random
