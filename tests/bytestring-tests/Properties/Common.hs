@@ -632,9 +632,11 @@ splitWith f ys = go [] ys
       | f x       = reverse acc : go [] xs
       | otherwise = go (x : acc) xs
 
+#if !MIN_VERSION_base(4, 19, 0)
 unsnoc :: [a] -> Maybe ([a], a)
 unsnoc [] = Nothing
 unsnoc xs = Just (init xs, last xs)
+#endif
 
 -- | Total conversion to char.
 word8ToChar :: Word8 -> Char
