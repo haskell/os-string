@@ -48,7 +48,6 @@ jobs:
     - name: Build
       run: |
         set -eux
-        [ "$(ghc --numeric-version)" = "${{ matrix.ghc }}" ]
         cabal update
         cabal build --enable-tests --enable-benchmarks
         cabal test
