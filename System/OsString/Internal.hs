@@ -3,6 +3,8 @@
 {-# LANGUAGE UnliftedFFITypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE ViewPatterns #-}  -- needed to quote a view pattern
 
 module System.OsString.Internal where
 
@@ -122,6 +124,7 @@ fromBytes = fmap OsString . PF.fromBytes
 
 -- | QuasiQuote an 'OsString'. This accepts Unicode characters
 -- and encodes as UTF-8 on unix and UTF-16 on windows.
+-- If used as pattern, requires turning on the @ViewPatterns@ extension.
 osstr :: QuasiQuoter
 osstr =
   QuasiQuoter
@@ -129,23 +132,25 @@ osstr =
   { quoteExp = \s -> do
       osp <- either (fail . show) (pure . OsString) . PF.encodeWith (mkUTF16le ErrorOnCodingFailure) $ s
       lift osp
-  , quotePat  = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a pattern)"
+  , quotePat = \s -> do
+      osp' <- either (fail . show) (pure . OsString) . PF.encodeWith (mkUTF16le ErrorOnCodingFailure) $ s
+      [p|((==) osp' -> True)|]
   , quoteType = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a type)"
+      fail "illegal QuasiQuote (allowed as expression or pattern only, used as a type)"
   , quoteDec  = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a declaration)"
+      fail "illegal QuasiQuote (allowed as expression or pattern only, used as a declaration)"
   }
 #else
   { quoteExp = \s -> do
       osp <- either (fail . show) (pure . OsString) . PF.encodeWith (mkUTF8 ErrorOnCodingFailure) $ s
       lift osp
-  , quotePat  = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a pattern)"
+  , quotePat = \s -> do
+      osp' <- either (fail . show) (pure . OsString) . PF.encodeWith (mkUTF8 ErrorOnCodingFailure) $ s
+      [p|((==) osp' -> True)|]
   , quoteType = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a type)"
+      fail "illegal QuasiQuote (allowed as expression or pattern only, used as a type)"
   , quoteDec  = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a declaration)"
+      fail "illegal QuasiQuote (allowed as expression or pattern only, used as a declaration)"
   }
 #endif
 
