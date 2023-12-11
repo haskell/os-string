@@ -3,6 +3,8 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
 -- This template expects CPP definitions for:
@@ -175,7 +177,7 @@ import GHC.IO.Encoding.UTF8 ( mkUTF8 )
 import qualified System.OsString.Data.ByteString.Short as BSP
 #endif
 import GHC.Stack (HasCallStack)
-import Prelude (Bool, Int, Maybe(..), IO, String, Either(..), fmap, ($), (.), mconcat, fromEnum, fromInteger, mempty, fromIntegral, fail, (<$>), show, either, pure, const, flip)
+import Prelude (Bool(..), Int, Maybe(..), IO, String, Either(..), fmap, ($), (.), mconcat, fromEnum, fromInteger, mempty, fromIntegral, fail, (<$>), show, either, pure, const, flip)
 import Data.Bifunctor ( bimap )
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
 import qualified System.OsString.Data.ByteString.Short as BS8
@@ -345,23 +347,25 @@ pstr =
   { quoteExp = \s -> do
       ps <- either (fail . show) pure $ encodeWith (mkUTF16le ErrorOnCodingFailure) s
       lift ps
-  , quotePat  = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a pattern)"
+  , quotePat = \s -> do
+      osp' <- either (fail . show) pure . encodeWith (mkUTF16le ErrorOnCodingFailure) $ s
+      [p|((==) osp' -> True)|]
   , quoteType = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a type)"
+      fail "illegal QuasiQuote (allowed as expression or pattern only, used as a type)"
   , quoteDec  = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a declaration)"
+      fail "illegal QuasiQuote (allowed as expression or pattern only, used as a declaration)"
   }
 #else
   { quoteExp = \s -> do
       ps <- either (fail . show) pure $ encodeWith (mkUTF8 ErrorOnCodingFailure) s
       lift ps
-  , quotePat  = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a pattern)"
+  , quotePat = \s -> do
+      osp' <- either (fail . show) pure . encodeWith (mkUTF8 ErrorOnCodingFailure) $ s
+      [p|((==) osp' -> True)|]
   , quoteType = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a type)"
+      fail "illegal QuasiQuote (allowed as expression or pattern only, used as a type)"
   , quoteDec  = \_ ->
-      fail "illegal QuasiQuote (allowed as expression only, used as a declaration)"
+      fail "illegal QuasiQuote (allowed as expression or pattern only, used as a declaration)"
   }
 #endif
 
