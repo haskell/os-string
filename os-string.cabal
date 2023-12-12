@@ -91,6 +91,25 @@ test-suite bytestring-tests
     , os-string
     , QuickCheck  >=2.7      && <2.15
 
+test-suite encoding-tests
+  default-language: Haskell2010
+  ghc-options:      -Wall
+  type:             exitcode-stdio-1.0
+  main-is:          Main.hs
+  hs-source-dirs:   tests tests/encoding
+  other-modules:
+    Arbitrary
+    EncodingSpec
+    TestUtil
+
+  build-depends:
+    , base
+    , bytestring  >=0.11.3.0
+    , deepseq
+    , os-string
+    , QuickCheck  >=2.7      && <2.15
+    , quickcheck-classes-base ^>=0.6.2
+
 benchmark bench
   main-is:          Bench.hs
   other-modules:    BenchOsString
