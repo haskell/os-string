@@ -42,9 +42,17 @@ import Data.Coerce (coerce)
 -- On windows this encodes as UTF16-LE (strictly), which is a pretty good guess.
 -- On unix this encodes as UTF8 (strictly), which is a good guess.
 --
--- Throws a 'EncodingException' if encoding fails.
+-- Throws an 'EncodingException' if encoding fails. If the input does not
+-- contain surrogate chars, you can use 'unsafeEncodeUtf'.
 encodeUtf :: MonadThrow m => String -> m OsString
 encodeUtf = fmap OsString . PF.encodeUtf
+
+-- | Unsafe unicode friendly encoding.
+--
+-- Like 'encodeUtf', except it crashes when the input contains
+-- surrogate chars. For sanitized input, this can be useful.
+unsafeEncodeUtf :: HasCallStack => String -> OsString
+unsafeEncodeUtf = OsString . PF.unsafeEncodeUtf
 
 -- | Encode an 'OsString' given the platform specific encodings.
 encodeWith :: TextEncoding  -- ^ unix text encoding
