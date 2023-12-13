@@ -33,6 +33,7 @@ import qualified System.OsString.Posix as PF
 #endif
 import GHC.Stack (HasCallStack)
 import Data.Coerce (coerce)
+import Data.Type.Coercion (coerceWith)
 
 
 
@@ -181,11 +182,9 @@ unsafeFromChar = coerce PF.unsafeFromChar
 
 -- | Converts back to a unicode codepoint (total).
 toChar :: OsChar -> Char
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-toChar (OsChar (WindowsChar w)) = chr $ fromIntegral w
-#else
-toChar (OsChar (PosixChar w)) = chr $ fromIntegral w
-#endif
+toChar = case coercionToPlatformTypes of
+  Left (co, _) -> chr . fromIntegral . getWindowsChar . coerceWith co
+  Right (co, _) -> chr . fromIntegral . getPosixChar . coerceWith co
 
 -- | /O(n)/ Append a byte to the end of a 'OsString'
 --
@@ -723,4 +722,3 @@ findIndex = coerce PF.findIndex
 -- @since 1.4.200.0
 findIndices :: (OsChar -> Bool) -> OsString -> [Int]
 findIndices = coerce PF.findIndices
-

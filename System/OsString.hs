@@ -123,6 +123,9 @@ module System.OsString
   , count
   , findIndex
   , findIndices
+
+  -- * Coercions
+  , coercionToPlatformTypes
   )
 where
 
@@ -202,5 +205,5 @@ import System.OsString.Internal
     , findIndices
     )
 import System.OsString.Internal.Types
-    ( OsString, OsChar )
+    ( OsString, OsChar, coercionToPlatformTypes )
 import Prelude ()

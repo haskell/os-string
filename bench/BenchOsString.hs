@@ -14,6 +14,7 @@
 
 module BenchOsString (benchMark) where
 
+import           Data.Type.Coercion                    (coerceWith, sym)
 import           System.OsString                       (osstr)
 import qualified System.OsString                       as S
 import           System.OsString.Internal.Types        (OsString(..), OsChar(..), PosixChar(..), WindowsChar(..))
@@ -24,23 +25,20 @@ benchStr :: String
 benchStr = "OsString"
 
 w :: Int -> OsChar
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-w i = OsChar (WindowsChar (fromIntegral i))
-#else
-w i = OsChar (PosixChar (fromIntegral i))
-#endif
+w = case S.coercionToPlatformTypes of
+  Left (co, _) -> coerceWith (sym co) . WindowsChar . fromIntegral
+  Right (co, _) -> coerceWith (sym co) . PosixChar . fromIntegral
 
 hashWord8 :: OsChar -> OsChar
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-hashWord8 (OsChar (WindowsChar w)) = OsChar . WindowsChar . fromIntegral . hashInt . fromIntegral $ w
-#else
-hashWord8 (OsChar (PosixChar w)) = OsChar . PosixChar . fromIntegral . hashInt . fromIntegral $ w
-#endif
+hashWord8 = case S.coercionToPlatformTypes of
+  Left (co, _) ->
+    coerceWith (sym co) . WindowsChar . fromIntegral . hashInt . fromIntegral .
+      getWindowsChar . coerceWith co
+  Right (co, _) ->
+    coerceWith (sym co) . PosixChar . fromIntegral . hashInt . fromIntegral .
+      getPosixChar . coerceWith co
 
 iw :: OsChar -> Int
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-iw (OsChar (WindowsChar w)) = fromIntegral w
-#else
-iw (OsChar (PosixChar w)) = fromIntegral w
-#endif
-
+iw = case S.coercionToPlatformTypes of
+  Left (co, _) -> fromIntegral . getWindowsChar . coerceWith co
+  Right (co, _) -> fromIntegral . getPosixChar . coerceWith co
