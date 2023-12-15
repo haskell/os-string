@@ -62,6 +62,8 @@ import qualified System.OsString.Data.ByteString.Short as B8
 import Data.Word
 
 import Control.Arrow
+import Data.Coerce (coerce)
+import Data.Type.Coercion (Coercion(..), coerceWith, sym)
 import Data.Foldable
 import Data.List as L
 import Data.Semigroup
@@ -145,28 +147,22 @@ swapWPosix = id
 
 #ifdef OSWORD
 isSpace :: OsChar -> Bool
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-isSpace = isSpaceWin . getOsChar
-#else
-isSpace = isSpacePosix . getOsChar
-#endif
+isSpace = case OBS.coercionToPlatformTypes of
+  Left (co, _) -> isSpaceWin . coerceWith co
+  Right (co, _) -> isSpacePosix . coerceWith co
 
 numWord :: OsString -> Int
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-numWord = numWordWin . getOsString
-#else
-numWord = numWordPosix . getOsString
-#endif
+numWord = case OBS.coercionToPlatformTypes of
+  Left (_, co) -> numWordWin . coerceWith co
+  Right (_, co) -> numWordPosix . coerceWith co
 
 toElem :: OsChar -> OsChar
 toElem = id
 
 swapW :: OsChar -> OsChar
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-swapW = OsChar . swapWWin . getOsChar
-#else
-swapW = OsChar . swapWPosix . getOsChar
-#endif
+swapW = case OBS.coercionToPlatformTypes of
+  Left (co, _) -> coerceWith (sym co) . swapWWin . coerceWith co
+  Right (co, _) -> coerceWith (sym co) . swapWPosix . coerceWith co
 
 instance Arbitrary OsString where
   arbitrary = OsString <$> arbitrary
@@ -184,11 +180,9 @@ deriving instance Num OsChar
 deriving instance Bounded OsChar
 
 instance Arbitrary ShortByteString where
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-  arbitrary = getWindowsString <$> arbitrary
-#else
-  arbitrary = getPosixString <$> arbitrary
-#endif
+  arbitrary = case OBS.coercionToPlatformTypes of
+    Left (_, _) -> getWindowsString <$> arbitrary
+    Right (_, _) -> getPosixString <$> arbitrary
 
 #else
 

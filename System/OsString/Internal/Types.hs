@@ -26,12 +26,15 @@ module System.OsString.Internal.Types
   , PlatformChar
   , OsString(..)
   , OsChar(..)
+  , coercionToPlatformTypes
   )
 where
 
 
 import Control.DeepSeq
+import Data.Coerce (coerce)
 import Data.Data
+import Data.Type.Coercion (Coercion(..), coerceWith)
 import Data.Word
 import Language.Haskell.TH.Syntax
     ( Lift (..), lift )
@@ -178,47 +181,25 @@ instance Ord OsString where
 -- | \"String-Concatenation\" for 'OsString'. This is __not__ the same
 -- as '(</>)'.
 instance Monoid OsString where
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-    mempty      = OsString (WindowsString BS.empty)
-#if MIN_VERSION_base(4,16,0)
+    mempty  = coerce BS.empty
+#if MIN_VERSION_base(4,11,0)
     mappend = (<>)
 #else
-    mappend (OsString (WindowsString a)) (OsString (WindowsString b))
-      = OsString (WindowsString (mappend a b))
+    mappend = coerce (mappend :: BS.ShortByteString -> BS.ShortByteString -> BS.ShortByteString))
 #endif
-#else
-    mempty      = OsString (PosixString BS.empty)
-#if MIN_VERSION_base(4,16,0)
-    mappend = (<>)
-#else
-    mappend (OsString (PosixString a)) (OsString (PosixString b))
-      = OsString (PosixString (mappend a b))
-#endif
-#endif
+
 #if MIN_VERSION_base(4,11,0)
 instance Semigroup OsString where
-#if MIN_VERSION_base(4,16,0)
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-    (<>) (OsString (WindowsString a)) (OsString (WindowsString b))
-      = OsString (WindowsString (mappend a b))
-#else
-    (<>) (OsString (PosixString a)) (OsString (PosixString b))
-      = OsString (PosixString (mappend a b))
-#endif
-#else
-    (<>) = mappend
-#endif
+    (<>) = coerce (mappend :: BS.ShortByteString -> BS.ShortByteString -> BS.ShortByteString)
 #endif
 
 
 instance Lift OsString where
-#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
-  lift (OsString (WindowsString bs))
-    = [| OsString (WindowsString (BS.pack $(lift $ BS.unpack bs))) :: OsString |]
-#else
-  lift (OsString (PosixString bs))
-    = [| OsString (PosixString (BS.pack $(lift $ BS.unpack bs))) :: OsString |]
-#endif
+  lift xs = case coercionToPlatformTypes of
+    Left (_, co) ->
+      [| OsString (WindowsString (BS.pack $(lift $ BS.unpack $ coerce $ coerceWith co xs))) :: OsString |]
+    Right (_, co) ->
+      [| OsString (PosixString (BS.pack $(lift $ BS.unpack $ coerce $ coerceWith co xs))) :: OsString |]
 #if MIN_VERSION_template_haskell(2,17,0)
   liftTyped = TH.unsafeCodeCoerce . TH.lift
 #elif MIN_VERSION_template_haskell(2,16,0)
@@ -244,3 +225,17 @@ instance Eq OsChar where
 instance Ord OsChar where
   compare (OsChar a) (OsChar b) = compare a b
 
+-- | This is a type-level evidence that 'OsChar' is a newtype wrapper
+-- over 'WindowsChar' or 'PosixChar' and 'OsString' is a newtype wrapper
+-- over 'WindowsString' or 'PosixString'. If you pattern match on
+-- 'coercionToPlatformTypes', GHC will know that relevant types
+-- are coercible to each other. This helps to avoid CPP in certain scenarios.
+coercionToPlatformTypes
+  :: Either
+  (Coercion OsChar WindowsChar, Coercion OsString WindowsString)
+  (Coercion OsChar PosixChar, Coercion OsString PosixString)
+#if defined(mingw32_HOST_OS)
+coercionToPlatformTypes = Left (Coercion, Coercion)
+#else
+coercionToPlatformTypes = Right (Coercion, Coercion)
+#endif
