@@ -1,5 +1,9 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.1 *Dec 2023*
+
+* add `unsafeEncodeUtf`, fixes #5
+
 ## 2.0.0 *Nov 2023*
 
 * Split out `OsString` modules from filepath library
