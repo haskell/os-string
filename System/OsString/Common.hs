@@ -30,6 +30,7 @@ module System.OsString.MODULE_NAME
 
   -- * String construction
   , encodeUtf
+  , unsafeEncodeUtf
   , encodeWith
   , encodeFS
   , fromBytes
@@ -177,7 +178,7 @@ import GHC.IO.Encoding.UTF8 ( mkUTF8 )
 import qualified System.OsString.Data.ByteString.Short as BSP
 #endif
 import GHC.Stack (HasCallStack)
-import Prelude (Bool(..), Int, Maybe(..), IO, String, Either(..), fmap, ($), (.), mconcat, fromEnum, fromInteger, mempty, fromIntegral, fail, (<$>), show, either, pure, const, flip)
+import Prelude (Bool(..), Int, Maybe(..), IO, String, Either(..), fmap, ($), (.), mconcat, fromEnum, fromInteger, mempty, fromIntegral, fail, (<$>), show, either, pure, const, flip, error, id)
 import Data.Bifunctor ( bimap )
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
 import qualified System.OsString.Data.ByteString.Short as BS8
@@ -189,19 +190,32 @@ import qualified System.OsString.Data.ByteString.Short as BS8
 --
 -- This encodes as UTF16-LE (strictly), which is a pretty good guess.
 --
--- Throws an 'EncodingException' if encoding fails.
+-- Throws an 'EncodingException' if encoding fails. If the input does not
+-- contain surrogate chars, you can use @unsafeEncodeUtf@.
 #else
 -- | Partial unicode friendly encoding.
 --
 -- This encodes as UTF8 (strictly), which is a good guess.
 --
--- Throws an 'EncodingException' if encoding fails.
+-- Throws an 'EncodingException' if encoding fails. If the input does not
+-- contain surrogate chars, you can use 'unsafeEncodeUtf'.
 #endif
 encodeUtf :: MonadThrow m => String -> m PLATFORM_STRING
 #ifdef WINDOWS
 encodeUtf = either throwM pure . encodeWith utf16le
 #else
 encodeUtf = either throwM pure . encodeWith utf8
+#endif
+
+-- | Unsafe unicode friendly encoding.
+--
+-- Like 'encodeUtf', except it crashes when the input contains
+-- surrogate chars. For sanitized input, this can be useful.
+unsafeEncodeUtf :: HasCallStack => String -> PLATFORM_STRING
+#ifdef WINDOWS
+unsafeEncodeUtf = either (error . displayException) id . encodeWith utf16le
+#else
+unsafeEncodeUtf = either (error . displayException) id . encodeWith utf8
 #endif
 
 -- | Encode a 'String' with the specified encoding.

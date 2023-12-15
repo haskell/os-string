@@ -21,6 +21,7 @@ module System.OsString
 
   -- * OsString construction
   , encodeUtf
+  , unsafeEncodeUtf
   , encodeWith
   , encodeFS
   , osstr
@@ -130,6 +131,7 @@ import System.OsString.Internal
     ( unsafeFromChar
     , toChar
     , encodeUtf
+    , unsafeEncodeUtf
     , encodeWith
     , encodeFS
     , osstr
