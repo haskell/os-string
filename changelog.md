@@ -1,5 +1,9 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.2.1 *Apr 2024*
+
+* Fix compabitiliby with GHC 9.10
+
 ## 2.0.2 *Dec 2023*
 
 * Implement coercionToPlatformTypes, fixes #4
