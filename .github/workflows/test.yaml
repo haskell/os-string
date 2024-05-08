@@ -161,3 +161,31 @@ jobs:
           cabal test
           cabal bench
 
+  # Emulation is incredibly slow and memory demanding. It seems that any
+  # executable with GHC RTS takes at least 7-8 Gb of RAM, so we can run
+  # `cabal` or `ghc` on their own, but cannot run them both at the same time,
+  # striking out `cabal test`. Instead we rely on system packages and invoke
+  # `ghc --make` manually, and even so `ghc -O` is prohibitively expensive.
+  emulated:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: ['s390x', 'ppc64le']
+    steps:
+    - uses: actions/checkout@v4
+    - uses: uraimo/run-on-arch-action@v2.7.2
+      timeout-minutes: 60
+      with:
+        arch: ${{ matrix.arch }}
+        distro: ubuntu_rolling
+        githubToken: ${{ github.token }}
+        install: |
+          apt-get update -y
+          apt-get install -y curl ghc libghc-tasty-quickcheck-dev libghc-syb-dev
+        run: |
+          ghc --version
+          ghc --make -itests:tests/bytestring-tests -o Main tests/bytestring-tests/Main.hs +RTS -s
+          ./Main +RTS -s
+          ghc --make -itests:tests/encoding -o Main tests/encoding/Main.hs +RTS -s
+          ./Main +RTS -s
