@@ -311,7 +311,11 @@ word16ToLE#, word16FromLE# :: Word16# -> Word16#
 word16ToLE#, word16FromLE# :: Word# -> Word#
 #endif
 #ifdef WORDS_BIGENDIAN
+#if MIN_VERSION_base(4,16,0)
+word16ToLE# w = wordToWord16# (byteSwap16# (word16ToWord# w))
+#else
 word16ToLE# = byteSwap16#
+#endif
 #else
 word16ToLE# w# = w#
 #endif
