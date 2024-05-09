@@ -1,5 +1,9 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.2.2 *May 2024*
+
+* Fix compilation on big-endian arches, by Andrew Lelechenko
+
 ## 2.0.2.1 *Apr 2024*
 
 * Fix compabitiliby with GHC 9.10
