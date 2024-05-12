@@ -55,9 +55,13 @@ encodeUtf = fmap OsString . PF.encodeUtf
 unsafeEncodeUtf :: HasCallStack => String -> OsString
 unsafeEncodeUtf = OsString . PF.unsafeEncodeUtf
 
--- | Encode an 'OsString' given the platform specific encodings.
+-- | Encode a 'FilePath' with the specified encoding.
+--
+-- Note: on windows, we expect a "wide char" encoding (e.g. UCS-2 or UTF-16). Anything
+-- that works with @Word16@ boundaries. Picking an incompatible encoding may crash
+-- filepath operations.
 encodeWith :: TextEncoding  -- ^ unix text encoding
-           -> TextEncoding  -- ^ windows text encoding
+           -> TextEncoding  -- ^ windows text encoding (wide char)
            -> String
            -> Either EncodingException OsString
 #if defined(mingw32_HOST_OS) || defined(__MINGW32__)

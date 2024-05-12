@@ -218,15 +218,24 @@ unsafeEncodeUtf = either (error . displayException) id . encodeWith utf16le
 unsafeEncodeUtf = either (error . displayException) id . encodeWith utf8
 #endif
 
+#ifdef WINDOWS
+-- | Encode a 'String' with the specified encoding.
+--
+-- Note: We expect a "wide char" encoding (e.g. UCS-2 or UTF-16). Anything
+-- that works with @Word16@ boundaries. Picking an incompatible encoding may crash
+-- filepath operations.
+encodeWith :: TextEncoding  -- ^ text encoding (wide char)
+           -> String
+           -> Either EncodingException PLATFORM_STRING
+encodeWith enc str = unsafePerformIO $ do
+  r <- try @SomeException $ GHC.withCStringLen enc str $ \cstr -> WindowsString <$> BS8.packCStringLen cstr
+  evaluate $ force $ first (flip EncodingError Nothing . displayException) r
+#else
 -- | Encode a 'String' with the specified encoding.
 encodeWith :: TextEncoding
            -> String
            -> Either EncodingException PLATFORM_STRING
 encodeWith enc str = unsafePerformIO $ do
-#ifdef WINDOWS
-  r <- try @SomeException $ GHC.withCStringLen enc str $ \cstr -> WindowsString <$> BS8.packCStringLen cstr
-  evaluate $ force $ first (flip EncodingError Nothing . displayException) r
-#else
   r <- try @SomeException $ GHC.withCStringLen enc str $ \cstr -> PosixString <$> BSP.packCStringLen cstr
   evaluate $ force $ first (flip EncodingError Nothing . displayException) r
 #endif
