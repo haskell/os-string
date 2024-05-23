@@ -502,9 +502,20 @@ null = coerce BSP.null
 
 -- | /O(1)/ The length of a 'OsString'.
 --
+-- This returns the number of code units
+-- (@Word8@ on unix and @Word16@ on windows), not
+-- bytes.
+--
+-- >>> length "abc"
+-- 3
+--
 -- @since 1.4.200.0
 length :: PLATFORM_STRING -> Int
+#ifdef WINDOWS
+length = coerce BSP.numWord16
+#else
 length = coerce BSP.length
+#endif
 
 -- | /O(n)/ 'map' @f xs@ is the OsString obtained by applying @f@ to each
 -- element of @xs@.
