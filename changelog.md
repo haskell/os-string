@@ -1,5 +1,9 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.3 *May 2024*
+
+* Fix `length` function wrt [#17](https://github.com/haskell/os-string/issues/17)
+
 ## 2.0.2.2 *May 2024*
 
 * Fix compilation on big-endian arches, by Andrew Lelechenko
