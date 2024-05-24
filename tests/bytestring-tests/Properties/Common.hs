@@ -454,6 +454,10 @@ tests =
 
   , ("length" ,
    property $ \x -> numWord x === fromIntegral (length (B.unpack x)))
+#if defined(OSWORD) || defined(WIN) || defined(POSIX)
+  , ("length abc" ,
+   once $ B.length (B.pack [0xbb, 0x03]) == 2)
+#endif
   , ("count" ,
    property $ \(toElem -> c) x -> B.count c x === fromIntegral (length (elemIndices c (B.unpack x))))
   , ("filter" ,
