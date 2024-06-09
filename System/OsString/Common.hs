@@ -33,6 +33,7 @@ module System.OsString.MODULE_NAME
   , unsafeEncodeUtf
   , encodeWith
   , encodeFS
+  , encodeLE
   , fromBytes
   , pstr
   , singleton
@@ -43,6 +44,7 @@ module System.OsString.MODULE_NAME
   , decodeUtf
   , decodeWith
   , decodeFS
+  , decodeLE
   , unpack
 
   -- * Word construction
@@ -242,14 +244,14 @@ encodeWith enc str = unsafePerformIO $ do
 
 #ifdef WINDOWS_DOC
 -- | This mimics the behavior of the base library when doing filesystem
--- operations, which does permissive UTF-16 encoding, where coding errors generate
+-- operations (usually filepaths), which does permissive UTF-16 encoding, where coding errors generate
 -- Chars in the surrogate range.
 --
 -- The reason this is in IO is because it unifies with the Posix counterpart,
 -- which does require IO. This is safe to 'unsafePerformIO'/'unsafeDupablePerformIO'.
 #else
 -- | This mimics the behavior of the base library when doing filesystem
--- operations, which uses shady PEP 383 style encoding (based on the current locale,
+-- operations (usually filepaths), which uses shady PEP 383 style encoding (based on the current locale,
 -- but PEP 383 only works properly on UTF-8 encodings, so good luck).
 --
 -- Looking up the locale requires IO. If you're not worried about calls
@@ -258,9 +260,33 @@ encodeWith enc str = unsafePerformIO $ do
 #endif
 encodeFS :: String -> IO PLATFORM_STRING
 #ifdef WINDOWS
+{-# DEPRECATED encodeFS "Use System.OsPath.Windows.encodeFS from filepath" #-}
 encodeFS = fmap WindowsString . encodeWithBaseWindows
 #else
+{-# DEPRECATED encodeFS "Use System.OsPath.Posix.encodeFS from filepath" #-}
 encodeFS = fmap PosixString . encodeWithBasePosix
+#endif
+
+#ifdef WINDOWS_DOC
+-- | This mimics the behavior of the base library when doing string
+-- operations, which does permissive UTF-16 encoding, where coding errors generate
+-- Chars in the surrogate range.
+--
+-- The reason this is in IO is because it unifies with the Posix counterpart,
+-- which does require IO. This is safe to 'unsafePerformIO'/'unsafeDupablePerformIO'.
+#else
+-- | This mimics the behavior of the base library when doing string
+-- operations, which uses 'getLocaleEncoding'.
+--
+-- Looking up the locale requires IO. If you're not worried about calls
+-- to 'setFileSystemEncoding', then 'unsafePerformIO' may be feasible (make sure
+-- to deeply evaluate the result to catch exceptions).
+#endif
+encodeLE :: String -> IO PLATFORM_STRING
+#ifdef WINDOWS
+encodeLE = fmap WindowsString . encodeWithBaseWindows
+#else
+encodeLE = fmap PosixString . encodeWithBasePosix'
 #endif
 
 
@@ -317,7 +343,29 @@ decodeWith unixEnc (PosixString ba) = unsafePerformIO $ do
 -- which does require IO. 'unsafePerformIO'/'unsafeDupablePerformIO' are safe, however.
 #else
 -- | This mimics the behavior of the base library when doing filesystem
--- operations, which uses shady PEP 383 style encoding (based on the current locale,
+-- operations, which uses 'getLocaleEncoding'.
+--
+-- Looking up the locale requires IO. If you're not worried about calls
+-- to 'setFileSystemEncoding', then 'unsafePerformIO' may be feasible (make sure
+-- to deeply evaluate the result to catch exceptions).
+#endif
+decodeLE :: PLATFORM_STRING -> IO String
+#ifdef WINDOWS
+decodeLE (WindowsString ba) = decodeWithBaseWindows ba
+#else
+decodeLE (PosixString ba) = decodeWithBasePosix' ba
+#endif
+
+#ifdef WINDOWS_DOC
+-- | Like 'decodeUtf', except this mimics the behavior of the base library when doing filesystem
+-- operations (usually filepaths), which does permissive UTF-16 encoding, where coding errors generate
+-- Chars in the surrogate range.
+--
+-- The reason this is in IO is because it unifies with the Posix counterpart,
+-- which does require IO. 'unsafePerformIO'/'unsafeDupablePerformIO' are safe, however.
+#else
+-- | This mimics the behavior of the base library when doing filesystem
+-- operations (usually filepaths), which uses shady PEP 383 style encoding (based on the current locale,
 -- but PEP 383 only works properly on UTF-8 encodings, so good luck).
 --
 -- Looking up the locale requires IO. If you're not worried about calls
@@ -326,8 +374,10 @@ decodeWith unixEnc (PosixString ba) = unsafePerformIO $ do
 #endif
 decodeFS :: PLATFORM_STRING -> IO String
 #ifdef WINDOWS
+{-# DEPRECATED decodeFS "Use System.OsPath.Windows.decodeFS from filepath" #-}
 decodeFS (WindowsString ba) = decodeWithBaseWindows ba
 #else
+{-# DEPRECATED decodeFS "Use System.OsPath.Posix.decodeFS from filepath" #-}
 decodeFS (PosixString ba) = decodeWithBasePosix ba
 #endif
 

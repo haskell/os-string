@@ -1,5 +1,9 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.5 *Jun 2024*
+
+* Add `decodeLE`/`encodeLE` and deprecate `decodeFS`/`encodeFS` (pointing users to `System.OsPath` instead), fixes [#19](https://github.com/haskell/os-string/issues/19)
+
 ## 2.0.3 *May 2024*
 
 * Fix `length` function wrt [#17](https://github.com/haskell/os-string/issues/17)

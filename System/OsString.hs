@@ -24,6 +24,7 @@ module System.OsString
   , unsafeEncodeUtf
   , encodeWith
   , encodeFS
+  , encodeLE
   , osstr
   , empty
   , singleton
@@ -33,6 +34,7 @@ module System.OsString
   , decodeUtf
   , decodeWith
   , decodeFS
+  , decodeLE
   , unpack
 
   -- * Word types
@@ -136,14 +138,14 @@ import System.OsString.Internal
     , encodeUtf
     , unsafeEncodeUtf
     , encodeWith
-    , encodeFS
+    , encodeLE
     , osstr
     , pack
     , empty
     , singleton
     , decodeUtf
     , decodeWith
-    , decodeFS
+    , decodeLE
     , unpack
     , snoc
     , cons
@@ -206,6 +208,38 @@ import System.OsString.Internal
     , findIndex
     , findIndices
     )
+import qualified System.OsString.Internal as SOI
 import System.OsString.Internal.Types
     ( OsString, OsChar, coercionToPlatformTypes )
-import Prelude ()
+import Prelude (String, IO)
+
+{-# DEPRECATED encodeFS "Use System.OsPath.encodeFS from filepath" #-}
+-- | Like 'encodeUtf', except this mimics the behavior of the base library when doing filesystem
+-- operations (usually filepaths), which is:
+--
+-- 1. on unix, uses shady PEP 383 style encoding (based on the current locale,
+--    but PEP 383 only works properly on UTF-8 encodings, so good luck)
+-- 2. on windows does permissive UTF-16 encoding, where coding errors generate
+--    Chars in the surrogate range
+--
+-- Looking up the locale requires IO. If you're not worried about calls
+-- to 'setFileSystemEncoding', then 'unsafePerformIO' may be feasible (make sure
+-- to deeply evaluate the result to catch exceptions).
+encodeFS :: String -> IO OsString
+encodeFS = SOI.encodeFS
+
+{-# DEPRECATED decodeFS "Use System.OsPath.encodeFS from filepath" #-}
+-- | Like 'decodeUtf', except this mimics the behavior of the base library when doing filesystem
+-- operations (usually filepaths), which is:
+--
+-- 1. on unix, uses shady PEP 383 style encoding (based on the current locale,
+--    but PEP 383 only works properly on UTF-8 encodings, so good luck)
+-- 2. on windows does permissive UTF-16 encoding, where coding errors generate
+--    Chars in the surrogate range
+--
+-- Looking up the locale requires IO. If you're not worried about calls
+-- to 'setFileSystemEncoding', then 'unsafePerformIO' may be feasible (make sure
+-- to deeply evaluate the result to catch exceptions).
+decodeFS :: OsString -> IO String
+decodeFS = SOI.decodeFS
+

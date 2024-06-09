@@ -26,9 +26,11 @@ import System.OsString.Encoding ( EncodingException(..) )
 import GHC.IO.Encoding.Failure ( CodingFailureMode(..) )
 #if defined(mingw32_HOST_OS) || defined(__MINGW32__)
 import GHC.IO.Encoding.UTF16 ( mkUTF16le )
+import System.OsString.Encoding ( encodeWithBaseWindows, decodeWithBaseWindows )
 import qualified System.OsString.Windows as PF
 #else
 import GHC.IO.Encoding.UTF8 ( mkUTF8 )
+import System.OsString.Encoding ( encodeWithBasePosix, decodeWithBasePosix )
 import qualified System.OsString.Posix as PF
 #endif
 import GHC.Stack (HasCallStack)
@@ -71,7 +73,7 @@ encodeWith unixEnc _ str = OsString <$> PF.encodeWith unixEnc str
 #endif
 
 -- | Like 'encodeUtf', except this mimics the behavior of the base library when doing filesystem
--- operations, which is:
+-- operations (usually filepaths), which is:
 --
 -- 1. on unix, uses shady PEP 383 style encoding (based on the current locale,
 --    but PEP 383 only works properly on UTF-8 encodings, so good luck)
@@ -82,7 +84,24 @@ encodeWith unixEnc _ str = OsString <$> PF.encodeWith unixEnc str
 -- to 'setFileSystemEncoding', then 'unsafePerformIO' may be feasible (make sure
 -- to deeply evaluate the result to catch exceptions).
 encodeFS :: String -> IO OsString
-encodeFS = fmap OsString . PF.encodeFS
+#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
+encodeFS = fmap (OsString . WindowsString) . encodeWithBaseWindows
+#else
+encodeFS = fmap (OsString . PosixString) . encodeWithBasePosix
+#endif
+
+-- | Like 'encodeUtf', except this mimics the behavior of the base library when doing string
+-- operations, which is:
+--
+-- 1. on unix this uses 'getLocaleEncoding'
+-- 2. on windows does permissive UTF-16 encoding, where coding errors generate
+--    Chars in the surrogate range
+--
+-- Looking up the locale requires IO. If you're not worried about calls
+-- to 'setFileSystemEncoding', then 'unsafePerformIO' may be feasible (make sure
+-- to deeply evaluate the result to catch exceptions).
+encodeLE :: String -> IO OsString
+encodeLE = fmap OsString . PF.encodeLE
 
 
 -- | Partial unicode friendly decoding.
@@ -110,7 +129,7 @@ decodeWith unixEnc _ (OsString x) = PF.decodeWith unixEnc x
 
 
 -- | Like 'decodeUtf', except this mimics the behavior of the base library when doing filesystem
--- operations, which is:
+-- operations (usually filepaths), which is:
 --
 -- 1. on unix, uses shady PEP 383 style encoding (based on the current locale,
 --    but PEP 383 only works properly on UTF-8 encodings, so good luck)
@@ -121,7 +140,24 @@ decodeWith unixEnc _ (OsString x) = PF.decodeWith unixEnc x
 -- to 'setFileSystemEncoding', then 'unsafePerformIO' may be feasible (make sure
 -- to deeply evaluate the result to catch exceptions).
 decodeFS :: OsString -> IO String
-decodeFS (OsString x) = PF.decodeFS x
+#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
+decodeFS (OsString (WindowsString x)) = decodeWithBaseWindows x
+#else
+decodeFS (OsString (PosixString x)) = decodeWithBasePosix x
+#endif
+
+-- | Like 'decodeUtf', except this mimics the behavior of the base library when doing string operations,
+-- which is:
+--
+-- 1. on unix this uses 'getLocaleEncoding'
+-- 2. on windows does permissive UTF-16 encoding, where coding errors generate
+--    Chars in the surrogate range
+--
+-- Looking up the locale requires IO. If you're not worried about calls
+-- to 'setFileSystemEncoding', then 'unsafePerformIO' may be feasible (make sure
+-- to deeply evaluate the result to catch exceptions).
+decodeLE :: OsString -> IO String
+decodeLE (OsString x) = PF.decodeLE x
 
 
 -- | Constructs an @OsString@ from a ByteString.
