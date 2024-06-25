@@ -2,7 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeApplications #-}
@@ -46,9 +46,7 @@ import GHC.Generics (Generic)
 import System.OsString.Encoding.Internal
 import qualified System.OsString.Data.ByteString.Short as BS
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
-#if MIN_VERSION_template_haskell(2,16,0)
 import qualified Language.Haskell.TH.Syntax as TH
-#endif
 
 -- Using unpinned bytearrays to avoid Heap fragmentation and
 -- which are reasonably cheap to pass to FFI calls
@@ -77,8 +75,7 @@ pattern WS { unWS } <- WindowsString unWS where
 
 
 instance Lift WindowsString where
-  lift (WindowsString bs)
-    = [| WindowsString (BS.pack $(lift $ BS.unpack bs)) :: WindowsString |]
+  lift (WindowsString bs) = TH.AppE (TH.ConE 'WindowsString) <$> (lift bs)
 #if MIN_VERSION_template_haskell(2,17,0)
   liftTyped = TH.unsafeCodeCoerce . TH.lift
 #elif MIN_VERSION_template_haskell(2,16,0)
@@ -103,8 +100,7 @@ pattern PS { unPS } <- PosixString unPS where
 #endif
 
 instance Lift PosixString where
-  lift (PosixString bs)
-    = [| PosixString (BS.pack $(lift $ BS.unpack bs)) :: PosixString |]
+  lift (PosixString bs) = TH.AppE (TH.ConE 'PosixString) <$> (lift bs)
 #if MIN_VERSION_template_haskell(2,17,0)
   liftTyped = TH.unsafeCodeCoerce . TH.lift
 #elif MIN_VERSION_template_haskell(2,16,0)
@@ -185,7 +181,7 @@ instance Monoid OsString where
 #if MIN_VERSION_base(4,11,0)
     mappend = (<>)
 #else
-    mappend = coerce (mappend :: BS.ShortByteString -> BS.ShortByteString -> BS.ShortByteString))
+    mappend = coerce (mappend :: BS.ShortByteString -> BS.ShortByteString -> BS.ShortByteString)
 #endif
 
 #if MIN_VERSION_base(4,11,0)
@@ -197,9 +193,9 @@ instance Semigroup OsString where
 instance Lift OsString where
   lift xs = case coercionToPlatformTypes of
     Left (_, co) ->
-      [| OsString (WindowsString (BS.pack $(lift $ BS.unpack $ coerce $ coerceWith co xs))) :: OsString |]
-    Right (_, co) ->
-      [| OsString (PosixString (BS.pack $(lift $ BS.unpack $ coerce $ coerceWith co xs))) :: OsString |]
+      TH.AppE (TH.ConE 'OsString) <$> (lift $ coerceWith co xs)
+    Right (_, co) -> do
+      TH.AppE (TH.ConE 'OsString) <$> (lift $ coerceWith co xs)
 #if MIN_VERSION_template_haskell(2,17,0)
   liftTyped = TH.unsafeCodeCoerce . TH.lift
 #elif MIN_VERSION_template_haskell(2,16,0)
