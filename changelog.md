@@ -1,5 +1,9 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.4 *Jun 2024*
+
+* Use TemplateHaskellQuotes rather than TemplateHaskell extension wrt [#21](https://github.com/haskell/os-string/issues/21)
+
 ## 2.0.3 *May 2024*
 
 * Fix `length` function wrt [#17](https://github.com/haskell/os-string/issues/17)
