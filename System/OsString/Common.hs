@@ -34,7 +34,13 @@ module System.OsString.MODULE_NAME
   , encodeWith
   , encodeFS
   , encodeLE
+#ifdef WINDOWS
+  , fromString
+#endif
   , fromBytes
+#ifndef WINDOWS
+  , fromBytestring
+#endif
   , pstr
   , singleton
   , empty
@@ -289,6 +295,19 @@ encodeLE = fmap WindowsString . encodeWithBaseWindows
 encodeLE = fmap PosixString . encodeWithBasePosix'
 #endif
 
+#ifdef WINDOWS
+-- | Like 'encodeFS', but not in IO.
+--
+-- 'encodeFS' was designed to have a symmetric type signature
+-- on unix and windows, but morally the function has no IO effects on windows,
+-- so we provide this variant without breaking existing API.
+--
+-- This function does not exist on unix.
+--
+-- @since 2.0.6
+fromString :: String -> WindowsString
+fromString = unsafePerformIO . fmap WindowsString . encodeWithBaseWindows
+#endif
 
 #ifdef WINDOWS_DOC
 -- | Partial unicode friendly decoding.
@@ -403,6 +422,20 @@ fromBytes bs =
   in either throwM (const . pure $ ws) $ decodeWith ucs2le ws
 #else
 fromBytes = pure . PosixString . BSP.toShort
+#endif
+
+#ifndef WINDOWS
+-- | Like 'fromBytes', but not in IO.
+--
+-- 'fromBytes' was designed to have a symmetric type signature
+-- on unix and windows, but morally the function has no IO effects on unix,
+-- so we provide this variant without breaking existing API.
+--
+-- This function does not exist on windows.
+--
+-- @since 2.0.6
+fromBytestring :: ByteString -> PosixString
+fromBytestring = PosixString . BSP.toShort
 #endif
 
 
