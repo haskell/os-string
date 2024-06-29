@@ -296,11 +296,13 @@ encodeLE = fmap PosixString . encodeWithBasePosix'
 #endif
 
 #ifdef WINDOWS
--- | Like 'encodeFS', but not in IO.
+-- | Like 'encodeLE but not in IO.
 --
--- 'encodeFS' was designed to have a symmetric type signature
+-- 'encodeLE' was designed to have a symmetric type signature
 -- on unix and windows, but morally the function has no IO effects on windows,
 -- so we provide this variant without breaking existing API.
+--
+-- On windows, 'encodeLE' is equivalent to 'encodeFS'.
 --
 -- This function does not exist on unix.
 --
