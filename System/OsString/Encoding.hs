@@ -23,6 +23,8 @@ module System.OsString.Encoding
   -- * base encoding
   , encodeWithBasePosix
   , decodeWithBasePosix
+  , encodeWithBasePosix'
+  , decodeWithBasePosix'
   , encodeWithBaseWindows
   , decodeWithBaseWindows
   )

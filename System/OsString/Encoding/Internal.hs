@@ -31,7 +31,7 @@ import Numeric (showHex)
 import Foreign.C (CStringLen)
 import Data.Char (chr)
 import Foreign
-import GHC.IO.Encoding (getFileSystemEncoding)
+import GHC.IO.Encoding (getFileSystemEncoding, getLocaleEncoding)
 
 -- -----------------------------------------------------------------------------
 -- UCS-2 LE
@@ -270,8 +270,14 @@ peekWindowsString (cp, l) = do
 withPosixString :: String -> (CStringLen -> IO a) -> IO a
 withPosixString fp f = getFileSystemEncoding >>= \enc -> GHC.withCStringLen enc fp f
 
+withPosixString' :: String -> (CStringLen -> IO a) -> IO a
+withPosixString' fp f = getLocaleEncoding >>= \enc -> GHC.withCStringLen enc fp f
+
 peekPosixString :: CStringLen -> IO String
 peekPosixString fp = getFileSystemEncoding >>= \enc -> GHC.peekCStringLen enc fp
+
+peekPosixString' :: CStringLen -> IO String
+peekPosixString' fp = getLocaleEncoding >>= \enc -> GHC.peekCStringLen enc fp
 
 -- | Decode with the given 'TextEncoding'.
 decodeWithTE :: TextEncoding -> BS8.ShortByteString -> Either EncodingException String
@@ -289,17 +295,29 @@ encodeWithTE enc str = unsafePerformIO $ do
 -- Encoders / decoders
 --
 
--- | This mimics the filepath decoder base uses on unix,
+-- | This mimics the filepath decoder base uses on unix (using PEP-383),
 -- with the small distinction that we're not truncating at NUL bytes (because we're not at
 -- the outer FFI layer).
 decodeWithBasePosix :: BS8.ShortByteString -> IO String
 decodeWithBasePosix ba = BS8.useAsCStringLen ba $ \fp -> peekPosixString fp
 
--- | This mimics the filepath dencoder base uses on unix,
+-- | This mimics the string decoder base uses on unix,
+-- with the small distinction that we're not truncating at NUL bytes (because we're not at
+-- the outer FFI layer).
+decodeWithBasePosix' :: BS8.ShortByteString -> IO String
+decodeWithBasePosix' ba = BS8.useAsCStringLen ba $ \fp -> peekPosixString' fp
+
+-- | This mimics the filepath encoder base uses on unix (using PEP-383),
 -- with the small distinction that we're not truncating at NUL bytes (because we're not at
 -- the outer FFI layer).
 encodeWithBasePosix :: String -> IO BS8.ShortByteString
 encodeWithBasePosix str = withPosixString str $ \cstr -> BS8.packCStringLen cstr
+
+-- | This mimics the string encoder base uses on unix,
+-- with the small distinction that we're not truncating at NUL bytes (because we're not at
+-- the outer FFI layer).
+encodeWithBasePosix' :: String -> IO BS8.ShortByteString
+encodeWithBasePosix' str = withPosixString' str $ \cstr -> BS8.packCStringLen cstr
 
 -- | This mimics the filepath decoder base uses on windows,
 -- with the small distinction that we're not truncating at NUL bytes (because we're not at
