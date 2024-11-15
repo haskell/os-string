@@ -50,6 +50,7 @@ library
     System.OsString.Encoding.Internal
     System.OsString
     System.OsString.Internal
+    System.OsString.Internal.Exception
     System.OsString.Internal.Types
     System.OsString.Posix
     System.OsString.Windows

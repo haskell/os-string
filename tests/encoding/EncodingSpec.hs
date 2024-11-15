@@ -14,6 +14,7 @@ import Test.QuickCheck
 import Data.Either ( isRight )
 import qualified System.OsString.Data.ByteString.Short as BS8
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
+import System.OsString.Internal.Exception
 import System.OsString.Encoding.Internal
 import GHC.IO (unsafePerformIO)
 import GHC.IO.Encoding ( setFileSystemEncoding )
@@ -154,21 +155,21 @@ padEven bs
 
 decodeP' :: BS8.ShortByteString -> Either String String
 decodeP' ba = unsafePerformIO $ do
-  r <- try @SomeException $ decodeWithBasePosix ba
+  r <- trySafe @SomeException $ decodeWithBasePosix ba
   evaluate $ force $ first displayException r
 
 encodeP' :: String -> Either String BS8.ShortByteString
 encodeP' str = unsafePerformIO $ do
-  r <- try @SomeException $ encodeWithBasePosix str
+  r <- trySafe @SomeException $ encodeWithBasePosix str
   evaluate $ force $ first displayException r
 
 decodeW' :: BS16.ShortByteString -> Either String String
 decodeW' ba = unsafePerformIO $ do
-  r <- try @SomeException $ decodeWithBaseWindows ba
+  r <- trySafe @SomeException $ decodeWithBaseWindows ba
   evaluate $ force $ first displayException r
 
 encodeW' :: String -> Either String BS8.ShortByteString
 encodeW' str = unsafePerformIO $ do
-  r <- try @SomeException $ encodeWithBaseWindows str
+  r <- trySafe @SomeException $ encodeWithBaseWindows str
   evaluate $ force $ first displayException r
 
