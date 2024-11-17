@@ -10,6 +10,7 @@ module System.OsString.Encoding.Internal where
 
 import qualified System.OsString.Data.ByteString.Short as BS8
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
+import System.OsString.Internal.Exception
 
 import GHC.Base
 import GHC.Real
@@ -282,13 +283,13 @@ peekPosixString' fp = getLocaleEncoding >>= \enc -> GHC.peekCStringLen enc fp
 -- | Decode with the given 'TextEncoding'.
 decodeWithTE :: TextEncoding -> BS8.ShortByteString -> Either EncodingException String
 decodeWithTE enc ba = unsafePerformIO $ do
-  r <- try @SomeException $ BS8.useAsCStringLen ba $ \fp -> GHC.peekCStringLen enc fp
+  r <- trySafe @SomeException $ BS8.useAsCStringLen ba $ \fp -> GHC.peekCStringLen enc fp
   evaluate $ force $ first (flip EncodingError Nothing . displayException) r
 
 -- | Encode with the given 'TextEncoding'.
 encodeWithTE :: TextEncoding -> String -> Either EncodingException BS8.ShortByteString
 encodeWithTE enc str = unsafePerformIO $ do
-  r <- try @SomeException $ GHC.withCStringLen enc str $ \cstr -> BS8.packCStringLen cstr
+  r <- trySafe @SomeException $ GHC.withCStringLen enc str $ \cstr -> BS8.packCStringLen cstr
   evaluate $ force $ first (flip EncodingError Nothing . displayException) r
 
 -- -----------------------------------------------------------------------------

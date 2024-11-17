@@ -143,7 +143,7 @@ module System.OsString.MODULE_NAME
 where
 
 
-
+import System.OsString.Internal.Exception
 import System.OsString.Internal.Types (
 #ifdef WINDOWS
   WindowsString(..), WindowsChar(..)
@@ -236,7 +236,7 @@ encodeWith :: TextEncoding  -- ^ text encoding (wide char)
            -> String
            -> Either EncodingException PLATFORM_STRING
 encodeWith enc str = unsafePerformIO $ do
-  r <- try @SomeException $ GHC.withCStringLen enc str $ \cstr -> WindowsString <$> BS8.packCStringLen cstr
+  r <- trySafe @SomeException $ GHC.withCStringLen enc str $ \cstr -> WindowsString <$> BS8.packCStringLen cstr
   evaluate $ force $ first (flip EncodingError Nothing . displayException) r
 #else
 -- | Encode a 'String' with the specified encoding.
@@ -244,7 +244,7 @@ encodeWith :: TextEncoding
            -> String
            -> Either EncodingException PLATFORM_STRING
 encodeWith enc str = unsafePerformIO $ do
-  r <- try @SomeException $ GHC.withCStringLen enc str $ \cstr -> PosixString <$> BSP.packCStringLen cstr
+  r <- trySafe @SomeException $ GHC.withCStringLen enc str $ \cstr -> PosixString <$> BSP.packCStringLen cstr
   evaluate $ force $ first (flip EncodingError Nothing . displayException) r
 #endif
 
@@ -340,7 +340,7 @@ decodeWith :: TextEncoding
            -> PLATFORM_STRING
            -> Either EncodingException String
 decodeWith winEnc (WindowsString ba) = unsafePerformIO $ do
-  r <- try @SomeException $ BS8.useAsCStringLen ba $ \fp -> GHC.peekCStringLen winEnc fp
+  r <- trySafe @SomeException $ BS8.useAsCStringLen ba $ \fp -> GHC.peekCStringLen winEnc fp
   evaluate $ force $ first (flip EncodingError Nothing . displayException) r
 #else
 -- | Decode a 'PosixString' with the specified encoding.
@@ -350,7 +350,7 @@ decodeWith :: TextEncoding
        -> PLATFORM_STRING
        -> Either EncodingException String
 decodeWith unixEnc (PosixString ba) = unsafePerformIO $ do
-  r <- try @SomeException $ BSP.useAsCStringLen ba $ \fp -> GHC.peekCStringLen unixEnc fp
+  r <- trySafe @SomeException $ BSP.useAsCStringLen ba $ \fp -> GHC.peekCStringLen unixEnc fp
   evaluate $ force $ first (flip EncodingError Nothing . displayException) r
 #endif
 
