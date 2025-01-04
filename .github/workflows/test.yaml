@@ -82,7 +82,7 @@ jobs:
         uses: docker://hasufell/arm32v7-ubuntu-haskell:focal
         name: Run build (arm32v7 linux)
         with:
-          args: sh -c "cabal update && ghcup install ghc --isolate=/usr --force 9.2.2 && cabal test -w ghc-9.2.2 && cabal bench -w ghc-9.2.2"
+          args: sh -c "cabal update && ghcup install ghc --isolate=/usr --force 9.2.2 && cabal test -w ghc-9.2.2"
 
       - if: matrix.arch == 'arm64v8'
         uses: docker://hasufell/arm64v8-ubuntu-haskell:focal
