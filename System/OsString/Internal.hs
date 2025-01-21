@@ -17,10 +17,17 @@ import Data.ByteString
 import Data.ByteString.Short
     ( ShortByteString )
 import Data.Char
+#if __GLASGOW_HASKELL__ >= 914
+import Language.Haskell.TH.Lift
+    (Lift(..), lift)
+import Language.Haskell.TH.QuasiQuoter
+    ( QuasiQuoter (..) )
+#else
+import Language.Haskell.TH.Syntax
+    (Lift(..), lift)
 import Language.Haskell.TH.Quote
     ( QuasiQuoter (..) )
-import Language.Haskell.TH.Syntax
-    ( Lift (..), lift )
+#endif
 import System.IO
     ( TextEncoding )
 

@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskellQuotes #-}
@@ -36,8 +37,11 @@ import Data.Coerce (coerce)
 import Data.Data
 import Data.Type.Coercion (Coercion(..), coerceWith)
 import Data.Word
-import Language.Haskell.TH.Syntax
-    ( Lift (..), lift )
+#if __GLASGOW_HASKELL__ >= 914
+import Language.Haskell.TH.Lift (Lift)
+#else
+import Language.Haskell.TH.Syntax (Lift)
+#endif
 #if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup
 #endif
@@ -46,7 +50,6 @@ import GHC.Generics (Generic)
 import System.OsString.Encoding.Internal
 import qualified System.OsString.Data.ByteString.Short as BS
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
-import qualified Language.Haskell.TH.Syntax as TH
 
 -- Using unpinned bytearrays to avoid Heap fragmentation and
 -- which are reasonably cheap to pass to FFI calls
@@ -58,7 +61,7 @@ import qualified Language.Haskell.TH.Syntax as TH
 
 -- | Commonly used windows string as wide character bytes.
 newtype WindowsString = WindowsString { getWindowsString :: BS.ShortByteString }
-  deriving (Eq, Ord, Semigroup, Monoid, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Semigroup, Monoid, Typeable, Generic, NFData, Lift)
 
 -- | Decodes as UCS-2.
 instance Show WindowsString where
@@ -73,19 +76,10 @@ pattern WS { unWS } <- WindowsString unWS where
 {-# COMPLETE WS #-}
 #endif
 
-
-instance Lift WindowsString where
-  lift (WindowsString bs) = TH.AppE (TH.ConE 'WindowsString) <$> (lift bs)
-#if MIN_VERSION_template_haskell(2,17,0)
-  liftTyped = TH.unsafeCodeCoerce . TH.lift
-#elif MIN_VERSION_template_haskell(2,16,0)
-  liftTyped = TH.unsafeTExpCoerce . TH.lift
-#endif
-
 -- | Commonly used Posix string as uninterpreted @char[]@
 -- array.
 newtype PosixString = PosixString { getPosixString :: BS.ShortByteString }
-  deriving (Eq, Ord, Semigroup, Monoid, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Semigroup, Monoid, Typeable, Generic, NFData, Lift)
 
 -- | Prints the raw bytes without decoding.
 instance Show PosixString where
@@ -97,14 +91,6 @@ pattern PS { unPS } <- PosixString unPS where
   PS a = PosixString a
 #if __GLASGOW_HASKELL__ >= 802
 {-# COMPLETE PS #-}
-#endif
-
-instance Lift PosixString where
-  lift (PosixString bs) = TH.AppE (TH.ConE 'PosixString) <$> (lift bs)
-#if MIN_VERSION_template_haskell(2,17,0)
-  liftTyped = TH.unsafeCodeCoerce . TH.lift
-#elif MIN_VERSION_template_haskell(2,16,0)
-  liftTyped = TH.unsafeTExpCoerce . TH.lift
 #endif
 
 
@@ -159,7 +145,7 @@ type PlatformChar = PosixChar
 -- dealing with the internals isn't generally recommended, but supported
 -- in case you need to write platform specific code.
 newtype OsString = OsString { getOsString :: PlatformString }
-  deriving (Typeable, Generic, NFData)
+  deriving (Typeable, Generic, NFData, Lift)
 
 -- | On windows, decodes as UCS-2. On unix prints the raw bytes without decoding.
 instance Show OsString where
@@ -188,20 +174,6 @@ instance Monoid OsString where
 instance Semigroup OsString where
     (<>) = coerce (mappend :: BS.ShortByteString -> BS.ShortByteString -> BS.ShortByteString)
 #endif
-
-
-instance Lift OsString where
-  lift xs = case coercionToPlatformTypes of
-    Left (_, co) ->
-      TH.AppE (TH.ConE 'OsString) <$> (lift $ coerceWith co xs)
-    Right (_, co) -> do
-      TH.AppE (TH.ConE 'OsString) <$> (lift $ coerceWith co xs)
-#if MIN_VERSION_template_haskell(2,17,0)
-  liftTyped = TH.unsafeCodeCoerce . TH.lift
-#elif MIN_VERSION_template_haskell(2,16,0)
-  liftTyped = TH.unsafeTExpCoerce . TH.lift
-#endif
-
 
 -- | Newtype representing a code unit.
 --
