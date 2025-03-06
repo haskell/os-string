@@ -304,6 +304,10 @@ null = coerce PF.null
 
 -- | /O(1)/ The length of a 'OsString'.
 --
+-- This returns the number of code units
+-- (@Word8@ on unix and @Word16@ on windows), not
+-- bytes.
+--
 -- @since 1.4.200.0
 length :: OsString -> Int
 length = coerce PF.length
