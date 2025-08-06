@@ -422,13 +422,7 @@ decodeFS (PosixString ba) = decodeWithBasePosix ba
 fromBytes :: MonadThrow m
           => ByteString
           -> m PLATFORM_STRING
-#ifdef WINDOWS
-fromBytes bs =
-  let ws = WindowsString . BS16.toShort $ bs
-  in either throwM (const . pure $ ws) $ decodeWith ucs2le ws
-#else
-fromBytes = pure . PosixString . BSP.toShort
-#endif
+fromBytes = fromShortBytes . BS16.toShort
 
 #ifdef WINDOWS_DOC
 -- | Constructs a platform string from a ShortByteString.
