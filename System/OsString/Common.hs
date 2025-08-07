@@ -38,8 +38,10 @@ module System.OsString.MODULE_NAME
   , fromString
 #endif
   , fromBytes
+  , fromShortBytes
 #ifndef WINDOWS
   , fromBytestring
+  , fromShortBytestring
 #endif
   , pstr
   , singleton
@@ -158,6 +160,8 @@ import Control.Monad.Catch
     ( MonadThrow, throwM )
 import Data.ByteString.Internal
     ( ByteString )
+import Data.ByteString.Short.Internal
+    ( ShortByteString )
 import Control.Exception
     ( SomeException, try, displayException )
 import Control.DeepSeq ( force )
@@ -418,12 +422,33 @@ decodeFS (PosixString ba) = decodeWithBasePosix ba
 fromBytes :: MonadThrow m
           => ByteString
           -> m PLATFORM_STRING
+fromBytes = fromShortBytes . BS16.toShort
+
+#ifdef WINDOWS_DOC
+-- | Constructs a platform string from a ShortByteString.
+--
+-- This ensures valid UCS-2LE.
+-- Note that this doesn't expand Word8 to Word16 on windows, so you may get invalid UTF-16.
+--
+-- Throws 'EncodingException' on invalid UCS-2LE (although unlikely).
+--
+-- @since 2.0.8
+#else
+-- | Constructs a platform string from a ShortByteString.
+--
+-- This is a no-op.
+--
+-- @since 2.0.8
+#endif
+fromShortBytes :: MonadThrow m
+               => ShortByteString
+               -> m PLATFORM_STRING
 #ifdef WINDOWS
-fromBytes bs =
-  let ws = WindowsString . BS16.toShort $ bs
+fromShortBytes bs =
+  let ws = WindowsString bs
   in either throwM (const . pure $ ws) $ decodeWith ucs2le ws
 #else
-fromBytes = pure . PosixString . BSP.toShort
+fromShortBytes = pure . PosixString
 #endif
 
 #ifndef WINDOWS
@@ -438,6 +463,12 @@ fromBytes = pure . PosixString . BSP.toShort
 -- @since 2.0.6
 fromBytestring :: ByteString -> PosixString
 fromBytestring = PosixString . BSP.toShort
+
+-- | Like 'fromShortBytes', but not in IO, similarly to 'fromBytestring'
+--
+-- @since 2.0.8
+fromShortBytestring :: ShortByteString -> PosixString
+fromShortBytestring = PosixString
 #endif
 
 

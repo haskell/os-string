@@ -14,6 +14,8 @@ import Control.Monad.Catch
     ( MonadThrow )
 import Data.ByteString
     ( ByteString )
+import Data.ByteString.Short
+    ( ShortByteString )
 import Data.Char
 import Language.Haskell.TH.Quote
     ( QuasiQuoter (..) )
@@ -169,6 +171,16 @@ fromBytes :: MonadThrow m
           => ByteString
           -> m OsString
 fromBytes = fmap OsString . PF.fromBytes
+
+-- | Constructs an @OsString@ from a ShortByteString.
+--
+-- On windows, this ensures valid UCS-2LE, on unix it is passed unchanged/unchecked.
+--
+-- Throws 'EncodingException' on invalid UCS-2LE on windows (although unlikely).
+fromShortBytes :: MonadThrow m
+               => ShortByteString
+               -> m OsString
+fromShortBytes = fmap OsString . PF.fromShortBytes
 
 
 -- | QuasiQuote an 'OsString'. This accepts Unicode characters
