@@ -1,5 +1,9 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.8 *Aug 2025*
+
+* Add safe conversions from ShortByteString [#34](https://github.com/haskell/os-string/pull/34)
+
 ## 2.0.7 *Nov 2024*
 
 * don't catch asynchronous exceptions during encoding/decoding wrt [#22](https://github.com/haskell/os-string/issues/22)
