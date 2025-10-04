@@ -43,7 +43,9 @@ module System.OsString.MODULE_NAME
   , fromBytestring
   , fromShortBytestring
 #endif
+#if !defined(__MHS__)
   , pstr
+#endif
   , singleton
   , empty
   , pack
@@ -166,26 +168,36 @@ import Control.Exception
     ( SomeException, try, displayException )
 import Control.DeepSeq ( force )
 import Data.Bifunctor ( first )
-import GHC.IO
-    ( evaluate, unsafePerformIO )
+import Control.Exception ( evaluate )
+import System.IO.Unsafe ( unsafePerformIO )
 import qualified GHC.Foreign as GHC
+#if !defined(__MHS__)
 import Language.Haskell.TH.Quote
     ( QuasiQuoter (..) )
 import Language.Haskell.TH.Syntax
     ( Lift (..), lift )
+#endif
 
 
 import GHC.IO.Encoding.Failure ( CodingFailureMode(..) )
 #ifdef WINDOWS
 import System.OsString.Encoding
+#if defined(__MHS__)
+import GHC.IO.Encoding( TextEncoding, utf16le )
+#else
 import System.IO
     ( TextEncoding, utf16le )
+#endif
 import GHC.IO.Encoding.UTF16 ( mkUTF16le )
 import qualified System.OsString.Data.ByteString.Short.Word16 as BSP
 #else
 import System.OsString.Encoding
+#if defined(__MHS__)
+import GHC.IO.Encoding( TextEncoding, utf8 )
+#else
 import System.IO
     ( TextEncoding, utf8 )
+#endif
 import GHC.IO.Encoding.UTF8 ( mkUTF8 )
 import qualified System.OsString.Data.ByteString.Short as BSP
 #endif
@@ -479,6 +491,7 @@ fromShortBytestring = PosixString
 -- | QuasiQuote a 'PosixString'. This accepts Unicode characters
 -- and encodes as UTF-8 on unix.
 #endif
+#if !defined(__MHS__)
 pstr :: QuasiQuoter
 pstr =
   QuasiQuoter
@@ -508,6 +521,7 @@ pstr =
   }
 #endif
 
+#endif /* !defined(__MHS__) */
 
 -- | Unpack a platform string to a list of platform words.
 unpack :: PLATFORM_STRING -> [PLATFORM_WORD]

@@ -17,12 +17,18 @@ import Data.ByteString
 import Data.ByteString.Short
     ( ShortByteString )
 import Data.Char
+#if !defined(__MHS__)
 import Language.Haskell.TH.Quote
     ( QuasiQuoter (..) )
 import Language.Haskell.TH.Syntax
     ( Lift (..), lift )
+#endif
+#if defined(__MHS__)
+import GHC.IO.Encoding ( TextEncoding )
+#else
 import System.IO
     ( TextEncoding )
+#endif
 
 import System.OsString.Encoding ( EncodingException(..) )
 import GHC.IO.Encoding.Failure ( CodingFailureMode(..) )
@@ -183,6 +189,7 @@ fromShortBytes :: MonadThrow m
 fromShortBytes = fmap OsString . PF.fromShortBytes
 
 
+#if !defined(__MHS__)
 -- | QuasiQuote an 'OsString'. This accepts Unicode characters
 -- and encodes as UTF-8 on unix and UTF-16 on windows.
 -- If used as pattern, requires turning on the @ViewPatterns@ extension.
@@ -214,6 +221,7 @@ osstr =
       fail "illegal QuasiQuote (allowed as expression or pattern only, used as a declaration)"
   }
 #endif
+#endif /* !defined(__MHS__) */
 
 
 -- | Unpack an 'OsString' to a list of 'OsChar'.

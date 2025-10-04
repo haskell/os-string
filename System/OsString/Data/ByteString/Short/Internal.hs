@@ -6,8 +6,10 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE UnliftedFFITypes         #-}
 
+#if !defined(__MHS__)
 -- Required for WORDS_BIGENDIAN
 #include <ghcautoconf.h>
+#endif
 
 -- |
 -- Module      :  System.OsString.Data.ByteString.Short.Internal
@@ -44,9 +46,14 @@ import Foreign.Storable (pokeByteOff)
 #endif
 import Foreign.Marshal.Array (withArray0, peekArray0, newArray0, withArrayLen, peekArray)
 import GHC.Exts
+#if defined(__MHS__)
+import Data.Word
+import Control.Monad.ST ( ST )
+#else
 import GHC.Word
 import GHC.ST
     ( ST (ST) )
+#endif
 import GHC.Stack ( HasCallStack )
 import Prelude hiding
     ( length )
@@ -65,6 +72,62 @@ isSpace = C.isSpace . word16ToChar
 -- | Total conversion to char.
 word16ToChar :: Word16 -> Char
 word16ToChar = C.chr . fromIntegral
+
+#if defined(__MHS__)
+import Control.Monad(forM_)
+import qualified Data.Array.Byte as B
+import Foreign.Ptr(Ptr, plusPtr)
+import Foreign.Storable (peekByteOff)
+import System.IO.Unsafe(unsafePerformIO)
+
+w8 :: Word16 -> Word8
+w8 = fromIntegral
+
+iw8 :: Int -> Word8
+iw8 = fromIntegral
+
+w16 :: Word8 -> Word16
+w16 = fromIntegral
+
+-- Use already existsing MHS types for the byte arrays
+type BA = B.ByteArray
+type MBA s = B.MutableByteArray s
+
+create :: Int -> (forall s. MBA s -> ST s ()) -> BS.ShortByteString
+create len fill =
+  runST $ do
+    mba <- B.newMutableByteArray len
+    fill mba
+    ba <- B.unsafeFreezeMutableByteArray mba
+    return $ fromBA ba
+
+asBA :: BS.ShortByteString -> BA
+asBA = B.byteStringToByteArray . BS.fromShort
+
+fromBA :: BA -> BS.ShortByteString
+fromBA = BS.toShort . B.byteArrayToByteString
+
+newPinnedByteArray :: Int -> ST s (MBA s)
+newPinnedByteArray len = B.newMutableByteArray len
+
+newByteArray :: Int -> ST s (MBA s)
+newByteArray len = B.newMutableByteArray len
+
+copyByteArray :: BA -> Int -> MBA s -> Int -> Int -> ST s ()
+copyByteArray src src_off dst dst_off len =
+  forM_ [0..len-1] $ \ i ->
+    B.writeWord8 dst (dst_off + i) (B.indexWord8 src (src_off + i))
+
+unsafeFreezeByteArray :: MBA s -> ST s BA
+unsafeFreezeByteArray = B.unsafeFreezeMutableByteArray
+
+copyAddrToByteArray :: Ptr a -> MBA RealWorld -> Int -> Int -> ST RealWorld ()
+copyAddrToByteArray src dst dst_off len =
+  forM_ [0..len-1] $ \ i -> do
+    b <- unsafeIOToST $ peekByteOff src i
+    B.writeWord8 dst (dst_off + i) b
+
+#else /* defined(__MHS__) */
 
 create :: Int -> (forall s. MBA s -> ST s ()) -> ShortByteString
 create len fill =
@@ -109,9 +172,10 @@ copyAddrToByteArray :: Ptr a -> MBA RealWorld -> Int -> Int -> ST RealWorld ()
 copyAddrToByteArray (Ptr src#) (MBA# dst#) (I# dst_off#) (I# len#) =
     ST $ \s -> case copyAddrToByteArray# src# dst# dst_off# len# s of
                  s' -> (# s', () #)
+#endif /* defined(__MHS__) */
 
 
--- this is a copy-paste from bytestring
+  -- this is a copy-paste from bytestring
 #if !MIN_VERSION_bytestring(0,10,9)
 ------------------------------------------------------------------------
 -- Primop replacements
@@ -284,6 +348,93 @@ packLenWord16Rev len ws0 =
       go mba (i - 2) ws
 
 
+#if defined(__MHS__)
+-- | Encode Word16 as little-endian.
+writeWord16Array :: MBA s
+                 -> Int      -- ^ Word8 index (not Word16)
+                 -> Word16
+                 -> ST s ()
+writeWord16Array mba i w = do
+  let (hi, lo) = w `quotRem` 256
+  B.writeWord8 mba i     (w8 lo)
+  B.writeWord8 mba (i+1) (w8 hi)
+
+indexWord8Array :: BA
+                -> Int      -- ^ Word8 index
+                -> Word8
+indexWord8Array = B.indexWord8
+
+-- | Decode Word16 from little-endian.
+indexWord16Array :: BA
+                 -> Int      -- ^ Word8 index (not Word16)
+                 -> Word16
+indexWord16Array ba i = w16 (B.indexWord8 ba (i+1)) * 256 + w16 (B.indexWord8 ba i)
+
+setByteArray :: MBA s -> Int -> Int -> Int -> ST s ()
+setByteArray dst off len c =
+  forM_ [0..len-1] $ \ i -> B.writeWord8 dst (off + i) (iw8 c)
+
+copyMutableByteArray :: MBA s -> Int -> MBA s -> Int -> Int -> ST s ()
+copyMutableByteArray src src_off dst dst_off len =
+  forM_ [0..len-1] $ \ i -> do
+    b <- B.readWord8 src (src_off + i)
+    B.writeWord8 dst (dst_off + i) b
+
+createAndTrim :: Int -> (forall s. MBA s -> ST s (Int, a)) -> (ShortByteString, a)
+createAndTrim l fill =
+    runST $ do
+      mba <- newByteArray l
+      (l', res) <- fill mba
+      if assert (l' <= l) $ l' >= l
+          then do
+            ba <- unsafeFreezeByteArray mba
+            return (fromBA ba, res)
+          else do
+            mba2 <- newByteArray l'
+            copyMutableByteArray mba 0 mba2 0 l'
+            ba <- unsafeFreezeByteArray mba2
+            return (fromBA ba, res)
+
+createAndTrim' :: Int -> (forall s. MBA s -> ST s Int) -> ShortByteString
+createAndTrim' l fill =
+    runST $ do
+      mba <- newByteArray l
+      l' <- fill mba
+      if assert (l' <= l) $ l' >= l
+          then do
+            ba <- unsafeFreezeByteArray mba
+            return (fromBA ba)
+          else do
+            mba2 <- newByteArray l'
+            copyMutableByteArray mba 0 mba2 0 l'
+            ba <- unsafeFreezeByteArray mba2
+            return (fromBA ba)
+{-# INLINE createAndTrim' #-}
+
+createAndTrim'' :: Int -> (forall s. MBA s -> MBA s -> ST s (Int, Int)) -> (ShortByteString, ShortByteString)
+createAndTrim'' l fill =
+    runST $ do
+      mba1 <- newByteArray l
+      mba2 <- newByteArray l
+      (l1, l2) <- fill mba1 mba2
+      sbs1 <- freeze' l1 mba1
+      sbs2 <- freeze' l2 mba2
+      pure (sbs1, sbs2)
+  where
+    freeze' :: Int -> MBA s -> ST s ShortByteString
+    freeze' l' mba =
+      if assert (l' <= l) $ l' >= l
+          then do
+            ba <- unsafeFreezeByteArray mba
+            return (fromBA ba)
+          else do
+            mba2 <- newByteArray l'
+            copyMutableByteArray mba 0 mba2 0 l'
+            ba <- unsafeFreezeByteArray mba2
+            return (fromBA ba)
+
+#else /* defined(__MHS__) */
+
 -- | Encode Word16 as little-endian.
 writeWord16Array :: MBA s
                  -> Int      -- ^ Word8 index (not Word16)
@@ -390,6 +541,7 @@ createAndTrim'' l fill =
             BA# ba# <- unsafeFreezeByteArray mba2
             return (SBS ba#)
 {-# INLINE createAndTrim'' #-}
+#endif /* defined(__MHS__) */
 
 -- Returns the index of the first match or the length of the whole
 -- bytestring if nothing matched.
@@ -419,8 +571,13 @@ findFromEndUntil k sbs = go (BS.length sbs - 2)
 
 
 assertEven :: ShortByteString -> ShortByteString
+#if defined(__MHS__)
+assertEven sbs
+  | even (BS.length sbs) = sbs
+#else
 assertEven sbs@(SBS barr#)
   | even (I# (sizeofByteArray# barr#)) = sbs
+#endif
   | otherwise = error ("Uneven number of bytes: " <> show (BS.length sbs) <> ". This is not a Word16 bytestream.")
 
 
@@ -440,6 +597,14 @@ compareByteArraysOff :: BA  -- ^ array 1
                      -> Int -- ^ offset for array 2
                      -> Int -- ^ length to compare
                      -> Int -- ^ like memcmp
+#if defined(__MHS__)
+compareByteArraysOff ba1 ba1off ba2 ba2off len = unsafePerformIO $
+  B.withByteArrayPtr ba1 $ \ ptr1 ->
+    B.withByteArrayPtr ba2 $ \ ptr2 ->
+      c_memcmp (plusPtr ptr1 ba1off) (plusPtr ptr2 ba2off) len
+foreign import ccall "string.h memcmp" c_memcmp :: Ptr Word8 -> Ptr Word8 -> Int -> IO Int
+
+#else /* defined(__MHS__) */
 #if MIN_VERSION_base(4,11,0)
 compareByteArraysOff (BA# ba1#) (I# ba1off#) (BA# ba2#) (I# ba2off#) (I# len#) =
   I# (compareByteArrays#  ba1# ba1off# ba2# ba2off# len#)
@@ -458,4 +623,5 @@ compareByteArraysOff (BA# ba1#) ba1off (BA# ba2#) ba2off len =
 foreign import ccall unsafe "static sbs_memcmp_off"
   c_memcmp_ByteArray :: ByteArray# -> Int -> ByteArray# -> Int -> CSize -> IO CInt
 #endif
+#endif /* defined(__MHS__) */
 

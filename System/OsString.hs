@@ -14,6 +14,7 @@
 --
 -- It captures the notion of syscall specific encoding (or the lack thereof) to avoid roundtrip issues
 -- and memory fragmentation by using unpinned byte arrays. Bytes are not touched or interpreted.
+{-# LANGUAGE CPP #-}
 module System.OsString
   (
   -- * String types
@@ -25,7 +26,9 @@ module System.OsString
   , encodeWith
   , encodeFS
   , encodeLE
+#if !defined(__MHS__)
   , osstr
+#endif
   , empty
   , singleton
   , pack
@@ -139,7 +142,9 @@ import System.OsString.Internal
     , unsafeEncodeUtf
     , encodeWith
     , encodeLE
+#if !defined(__MHS__)
     , osstr
+#endif
     , pack
     , empty
     , singleton

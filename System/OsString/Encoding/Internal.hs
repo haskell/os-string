@@ -2,6 +2,7 @@
            , BangPatterns
            , TypeApplications
            , MultiWayIf
+           , CPP
   #-}
 {-# OPTIONS_GHC  -funbox-strict-fields #-}
 
@@ -12,9 +13,12 @@ import qualified System.OsString.Data.ByteString.Short as BS8
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
 import System.OsString.Internal.Exception
 
+#if !defined(__MHS__)
 import GHC.Base
 import GHC.Real
 import GHC.Num
+import GHC.Show (Show (show))
+#endif
 -- import GHC.IO
 import GHC.IO.Buffer
 import GHC.IO.Encoding.Failure
@@ -23,16 +27,21 @@ import Data.Bits
 import Control.Exception (SomeException, try, Exception (displayException), evaluate)
 import qualified GHC.Foreign as GHC
 import Data.Either (Either)
-import GHC.IO (unsafePerformIO)
+import System.IO.Unsafe (unsafePerformIO)
 import Control.DeepSeq (force, NFData (rnf))
 import Data.Bifunctor (first)
 import Data.Data (Typeable)
-import GHC.Show (Show (show))
 import Numeric (showHex)
 import Foreign.C (CStringLen)
 import Data.Char (chr)
 import Foreign
 import GHC.IO.Encoding (getFileSystemEncoding, getLocaleEncoding)
+
+#if defined(__MHS__)
+import Data.Char(ord)
+unsafeChr :: Int -> Char
+unsafeChr = chr
+#endif
 
 -- -----------------------------------------------------------------------------
 -- UCS-2 LE
@@ -171,7 +180,7 @@ utf16le_b_decode
                       c3 <- readWord8Buf iraw (ir+3)
                       let x2 = fromIntegral c3 `shiftL` 8 + fromIntegral c2
                       if | 0xd800 <= x1 && x1 <= 0xdbff
-                         , 0xdc00 <= x2 && x2 <= 0xdfff -> do
+                          ,0xdc00 <= x2 && x2 <= 0xdfff -> do
                              ow' <- writeCharBuf oraw ow (unsafeChr ((x1 - 0xd800)*0x400 + (x2 - 0xdc00) + 0x10000))
                              loop (ir+4) ow'
                          | otherwise -> do
