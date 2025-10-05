@@ -43,9 +43,7 @@ module System.OsString.MODULE_NAME
   , fromBytestring
   , fromShortBytestring
 #endif
-#if !defined(__MHS__)
   , pstr
-#endif
   , singleton
   , empty
   , pack
@@ -171,12 +169,10 @@ import Data.Bifunctor ( first )
 import Control.Exception ( evaluate )
 import System.IO.Unsafe ( unsafePerformIO )
 import qualified GHC.Foreign as GHC
-#if !defined(__MHS__)
 import Language.Haskell.TH.Quote
     ( QuasiQuoter (..) )
 import Language.Haskell.TH.Syntax
     ( Lift (..), lift )
-#endif
 
 
 import GHC.IO.Encoding.Failure ( CodingFailureMode(..) )
@@ -491,7 +487,7 @@ fromShortBytestring = PosixString
 -- | QuasiQuote a 'PosixString'. This accepts Unicode characters
 -- and encodes as UTF-8 on unix.
 #endif
-#if !defined(__MHS__)
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasi_quoter)
 pstr :: QuasiQuoter
 pstr =
   QuasiQuoter
@@ -520,7 +516,9 @@ pstr =
       fail "illegal QuasiQuote (allowed as expression or pattern only, used as a declaration)"
   }
 #endif
-
+#else
+pstr :: a
+pstr = error "Systen.OsString.Common.pstr: no Template Haskell"
 #endif /* !defined(__MHS__) */
 
 -- | Unpack a platform string to a list of platform words.

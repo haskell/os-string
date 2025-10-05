@@ -26,9 +26,7 @@ module System.OsString
   , encodeWith
   , encodeFS
   , encodeLE
-#if !defined(__MHS__)
   , osstr
-#endif
   , empty
   , singleton
   , pack
@@ -142,9 +140,7 @@ import System.OsString.Internal
     , unsafeEncodeUtf
     , encodeWith
     , encodeLE
-#if !defined(__MHS__)
     , osstr
-#endif
     , pack
     , empty
     , singleton

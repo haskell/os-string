@@ -36,10 +36,8 @@ import Data.Coerce (coerce)
 import Data.Data
 import Data.Type.Coercion (Coercion(..), coerceWith)
 import Data.Word
-#if !defined(__MHS__)
 import Language.Haskell.TH.Syntax
     ( Lift (..), lift )
-#endif
 #if !MIN_VERSION_base(4,11,0)
 import Data.Semigroup
 #endif
@@ -118,7 +116,7 @@ pattern PS { unPS } <- PosixString unPS where
 #endif
 #endif /* defined(__MHS__) */
 
-#if !defined(__MHS__)
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasi_lift)
 instance Lift PosixString where
   lift (PosixString bs) = TH.AppE (TH.ConE 'PosixString) <$> (lift bs)
 #if MIN_VERSION_template_haskell(2,17,0)
@@ -126,7 +124,7 @@ instance Lift PosixString where
 #elif MIN_VERSION_template_haskell(2,16,0)
   liftTyped = TH.unsafeTExpCoerce . TH.lift
 #endif
-#endif /* !defined(__MHS__) */
+#endif
 
 
 #if defined(mingw32_HOST_OS) || defined(__MINGW32__)
@@ -223,7 +221,7 @@ instance Semigroup OsString where
 #endif
 
 
-#if !defined(__MHS__)
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasi_lift)
 instance Lift OsString where
   lift xs = case coercionToPlatformTypes of
     Left (_, co) ->
@@ -235,8 +233,7 @@ instance Lift OsString where
 #elif MIN_VERSION_template_haskell(2,16,0)
   liftTyped = TH.unsafeTExpCoerce . TH.lift
 #endif
-
-#endif /* !defined(__MHS__) */
+#endif
 
 -- | Newtype representing a code unit.
 --
