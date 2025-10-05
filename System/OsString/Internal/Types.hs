@@ -116,7 +116,7 @@ pattern PS { unPS } <- PosixString unPS where
 #endif
 #endif /* defined(__MHS__) */
 
-#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasi_lift)
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_lift)
 instance Lift PosixString where
   lift (PosixString bs) = TH.AppE (TH.ConE 'PosixString) <$> (lift bs)
 #if MIN_VERSION_template_haskell(2,17,0)
@@ -221,7 +221,7 @@ instance Semigroup OsString where
 #endif
 
 
-#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasi_lift)
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_lift)
 instance Lift OsString where
   lift xs = case coercionToPlatformTypes of
     Left (_, co) ->
