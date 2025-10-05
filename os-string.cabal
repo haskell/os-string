@@ -67,9 +67,9 @@ library
     , base              >=4.12.0.0      && <4.23
     , bytestring        >=0.11.3.0
     , deepseq
+    , exceptions
   if impl(ghc)
     build-depends:
-      , exceptions
       , template-haskell
   if impl(mhs)
     build-depends:
