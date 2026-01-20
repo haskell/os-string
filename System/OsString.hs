@@ -14,6 +14,7 @@
 --
 -- It captures the notion of syscall specific encoding (or the lack thereof) to avoid roundtrip issues
 -- and memory fragmentation by using unpinned byte arrays. Bytes are not touched or interpreted.
+{-# LANGUAGE CPP #-}
 module System.OsString
   (
   -- * String types

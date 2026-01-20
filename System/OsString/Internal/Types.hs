@@ -65,6 +65,13 @@ instance Show WindowsString where
   -- cWcharsToChars_UCS2 is total
   show = show . cWcharsToChars_UCS2 . BS16.unpack . getWindowsString
 
+#if defined(__MHS__)
+-- No record pattern synonyms in MicroHs
+pattern WS :: BS.ShortByteString -> WindowsString
+pattern WS s = WindowsString s
+unWS :: WindowsString -> BS.ShortByteString
+unWS (WS s) = s
+#else
 -- | Just a short bidirectional synonym for 'WindowsString' constructor.
 pattern WS :: BS.ShortByteString -> WindowsString
 pattern WS { unWS } <- WindowsString unWS where
@@ -72,8 +79,10 @@ pattern WS { unWS } <- WindowsString unWS where
 #if __GLASGOW_HASKELL__ >= 802
 {-# COMPLETE WS #-}
 #endif
+#endif /* defined(__MHS__) */
 
 
+#if !defined(__MHS__)
 instance Lift WindowsString where
   lift (WindowsString bs) = TH.AppE (TH.ConE 'WindowsString) <$> (lift bs)
 #if MIN_VERSION_template_haskell(2,17,0)
@@ -81,6 +90,7 @@ instance Lift WindowsString where
 #elif MIN_VERSION_template_haskell(2,16,0)
   liftTyped = TH.unsafeTExpCoerce . TH.lift
 #endif
+#endif /* !defined(__MHS__) */
 
 -- | Commonly used Posix string as uninterpreted @char[]@
 -- array.
@@ -91,6 +101,12 @@ newtype PosixString = PosixString { getPosixString :: BS.ShortByteString }
 instance Show PosixString where
   show (PosixString ps) = show ps
 
+#if defined(__MHS__)
+pattern PS :: BS.ShortByteString -> PosixString
+pattern PS a = PosixString a
+unPS :: PosixString -> BS.ShortByteString
+unPS (PS a) = a
+#else
 -- | Just a short bidirectional synonym for 'PosixString' constructor.
 pattern PS :: BS.ShortByteString -> PosixString
 pattern PS { unPS } <- PosixString unPS where
@@ -98,13 +114,16 @@ pattern PS { unPS } <- PosixString unPS where
 #if __GLASGOW_HASKELL__ >= 802
 {-# COMPLETE PS #-}
 #endif
+#endif /* defined(__MHS__) */
 
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_lift)
 instance Lift PosixString where
   lift (PosixString bs) = TH.AppE (TH.ConE 'PosixString) <$> (lift bs)
 #if MIN_VERSION_template_haskell(2,17,0)
   liftTyped = TH.unsafeCodeCoerce . TH.lift
 #elif MIN_VERSION_template_haskell(2,16,0)
   liftTyped = TH.unsafeTExpCoerce . TH.lift
+#endif
 #endif
 
 
@@ -126,6 +145,17 @@ newtype PosixChar   = PosixChar { getPosixChar :: Word8 }
 instance Show PosixChar where
   show (PosixChar pc) = show pc
 
+#if defined(__MHS__)
+pattern WW :: Word16 -> WindowsChar
+pattern WW a = WindowsChar a
+unWW :: WindowsChar -> Word16
+unWW (WW a) = a
+
+pattern PW :: Word8 -> PosixChar
+pattern PW a = PosixChar a
+unPW :: PosixChar -> Word8
+unPW (PW a) = a
+#else
 -- | Just a short bidirectional synonym for 'WindowsChar' constructor.
 pattern WW :: Word16 -> WindowsChar
 pattern WW { unWW } <- WindowsChar unWW where
@@ -141,6 +171,7 @@ pattern PW { unPW } <- PosixChar unPW where
 #if __GLASGOW_HASKELL__ >= 802
 {-# COMPLETE PW #-}
 #endif
+#endif /* defined(__MHS__) */
 
 #if defined(mingw32_HOST_OS) || defined(__MINGW32__)
 type PlatformChar = WindowsChar
@@ -190,6 +221,7 @@ instance Semigroup OsString where
 #endif
 
 
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_lift)
 instance Lift OsString where
   lift xs = case coercionToPlatformTypes of
     Left (_, co) ->
@@ -201,7 +233,7 @@ instance Lift OsString where
 #elif MIN_VERSION_template_haskell(2,16,0)
   liftTyped = TH.unsafeTExpCoerce . TH.lift
 #endif
-
+#endif
 
 -- | Newtype representing a code unit.
 --

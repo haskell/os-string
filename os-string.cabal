@@ -68,7 +68,12 @@ library
     , bytestring        >=0.11.3.0
     , deepseq
     , exceptions
-    , template-haskell
+  if impl(ghc)
+    build-depends:
+      , template-haskell
+  if impl(mhs)
+    build-depends:
+      , ghc-compat
 
   ghc-options:      -Wall
 

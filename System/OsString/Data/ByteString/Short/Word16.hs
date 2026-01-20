@@ -164,7 +164,9 @@ import Prelude hiding
     , head
     , init
     , last
+    , length
     , map
+    , null
     , replicate
     , span
     , splitAt
@@ -173,7 +175,7 @@ import Prelude hiding
     , takeWhile
     )
 import qualified Data.Foldable as Foldable
-import GHC.ST ( ST )
+import Control.Monad.ST ( ST )
 import GHC.Stack ( HasCallStack )
 import GHC.Exts ( inline )
 
@@ -379,6 +381,7 @@ replicate w c
     -- can't use setByteArray here, because we write UTF-16LE
     | otherwise = create (w * 2) (`go` 0)
   where
+    go :: forall s . MBA s -> Int -> ST s ()
     go mba ix
       | ix < 0 || ix >= w * 2 = pure ()
       | otherwise = writeWord16Array mba ix c >> go mba (ix + 2)
@@ -589,7 +592,7 @@ span p = break (not . p) . assertEven
 -- > let (x, y) = span (not . isSpace) (reverse ps) in (reverse y, reverse x)
 --
 spanEnd :: (Word16 -> Bool) -> ShortByteString -> (ShortByteString, ShortByteString)
-spanEnd  p = \(assertEven -> ps) -> splitAt (findFromEndUntil (not.p) ps) ps
+spanEnd  p = \(assertEven -> ps) -> splitAt (findFromEndUntil (not . p) ps) ps
 
 -- | /O(n)/ 'splitAt' @n xs@ is equivalent to @('take' n xs, 'drop' n xs)@.
 --
