@@ -169,10 +169,17 @@ import Data.Bifunctor ( first )
 import Control.Exception ( evaluate )
 import System.IO.Unsafe ( unsafePerformIO )
 import qualified GHC.Foreign as GHC
+#if __GLASGOW_HASKELL__ >= 914
+import Language.Haskell.TH.Lift
+    (Lift(..))
+import Language.Haskell.TH.QuasiQuoter
+    ( QuasiQuoter (..) )
+#else
+import Language.Haskell.TH.Syntax
+    (Lift(..))
 import Language.Haskell.TH.Quote
     ( QuasiQuoter (..) )
-import Language.Haskell.TH.Syntax
-    ( Lift (..), lift )
+#endif
 
 
 import GHC.IO.Encoding.Failure ( CodingFailureMode(..) )

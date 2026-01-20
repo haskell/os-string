@@ -68,12 +68,15 @@ library
     , bytestring        >=0.11.3.0
     , deepseq
     , exceptions
-  if impl(ghc)
-    build-depends:
-      , template-haskell
-  if impl(mhs)
-    build-depends:
-      , ghc-compat
+  -- template-haskell-lift was added as a boot library in GHC-9.14
+  -- once we no longer wish to backport releases to older major releases of GHC,
+  -- this conditional can be dropped
+  if impl(ghc < 9.14)
+      build-depends: template-haskell
+  elif impl(ghc)
+      build-depends:
+        , template-haskell-lift >=0.1 && <0.2
+        , template-haskell-quasiquoter >=0.1 && <0.2
 
   ghc-options:      -Wall
 
