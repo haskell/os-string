@@ -13,15 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macOS-13, windows-latest]
-        ghc: ['9.4', '9.6', '9.8', '9.10', '9.12']
-        include:
-          - os: ubuntu-latest
-            ghc: '8.10'
-          - os: ubuntu-latest
-            ghc: '9.0'
-          - os: ubuntu-latest
-            ghc: '9.2'
+        os: [ubuntu-latest, macOS-15-intel, macOS-latest, windows-latest]
+        ghc: ['9.6', '9.8', '9.10', '9.12', '9.14']
     steps:
     - uses: actions/checkout@v4
 
