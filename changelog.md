@@ -1,5 +1,9 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.10 *Jan 2026*
+
+* fix build on GHC 9.14 wrt [#40](https://github.com/haskell/os-string/issues/40)
+
 ## 2.0.9 *Jan 2026*
 
 * support MicroHS wrt [#35](https://github.com/haskell/os-string/pull/35)
