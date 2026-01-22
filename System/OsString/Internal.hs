@@ -197,7 +197,7 @@ fromShortBytes = fmap OsString . PF.fromShortBytes
 -- | QuasiQuote an 'OsString'. This accepts Unicode characters
 -- and encodes as UTF-8 on unix and UTF-16 on windows.
 -- If used as pattern, requires turning on the @ViewPatterns@ extension.
-#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasi_quoter)
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasiquoter)
 osstr :: QuasiQuoter
 osstr =
   QuasiQuoter

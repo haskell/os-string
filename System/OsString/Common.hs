@@ -494,7 +494,7 @@ fromShortBytestring = PosixString
 -- | QuasiQuote a 'PosixString'. This accepts Unicode characters
 -- and encodes as UTF-8 on unix.
 #endif
-#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasi_quoter)
+#if defined(MIN_VERSION_template_haskell) || defined(MIN_VERSION_template_haskell_quasiquoter)
 pstr :: QuasiQuoter
 pstr =
   QuasiQuoter
