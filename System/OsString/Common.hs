@@ -57,6 +57,7 @@ module System.OsString.MODULE_NAME
 
   -- * Word construction
   , unsafeFromChar
+  , fromWord
 
   -- * Word deconstruction
   , toChar
@@ -210,6 +211,11 @@ import Data.Bifunctor ( bimap )
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
 import qualified System.OsString.Data.ByteString.Short as BS8
 
+#ifdef WINDOWS
+import Data.Word (Word16)
+#else
+import Data.Word (Word8)
+#endif
 
 
 #ifdef WINDOWS_DOC
@@ -547,6 +553,19 @@ singleton = coerce BSP.singleton
 empty :: PLATFORM_STRING
 empty = mempty
 
+#ifdef WINDOWS
+-- | Convert from 'Word16'.
+--
+-- @since 2.0.11
+fromWord :: Word16 -> PLATFORM_WORD
+fromWord = WindowsChar
+#else
+-- | Convert from 'Word8'.
+--
+-- @since 2.0.11
+fromWord :: Word8 -> PLATFORM_WORD
+fromWord = PosixChar
+#endif
 
 #ifdef WINDOWS
 -- | Truncates to 2 octets.

@@ -3,6 +3,7 @@
 ## 2.0.11 *Jun 2026*
 
 * Add Lift instance to `OsChar`, `PosixChar` and `WindowsChar`
+* Add `fromWord`
 
 ## 2.0.10 *Jan 2026*
 

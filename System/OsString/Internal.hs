@@ -49,6 +49,7 @@ import qualified System.OsString.Posix as PF
 import GHC.Stack (HasCallStack)
 import Data.Coerce (coerce)
 import Data.Type.Coercion (coerceWith)
+import Data.Word (Word8)
 
 
 
@@ -255,6 +256,16 @@ singleton = coerce PF.singleton
 -- | Truncates on unix to 1 and on Windows to 2 octets.
 unsafeFromChar :: Char -> OsChar
 unsafeFromChar = coerce PF.unsafeFromChar
+
+-- | Convert from 'Word8'.
+--
+-- @since 2.0.11
+fromWord :: Word8 -> OsChar
+#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
+fromWord = OsChar . WindowsChar . fromIntegral
+#else
+fromWord = OsChar . PosixChar
+#endif
 
 -- | Converts back to a unicode codepoint (total).
 toChar :: OsChar -> Char

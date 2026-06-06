@@ -43,6 +43,7 @@ module System.OsString
 
   -- * Word construction
   , unsafeFromChar
+  , fromWord
 
   -- * Word deconstruction
   , toChar
@@ -135,6 +136,7 @@ where
 
 import System.OsString.Internal
     ( unsafeFromChar
+    , fromWord
     , toChar
     , encodeUtf
     , unsafeEncodeUtf
