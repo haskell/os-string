@@ -115,13 +115,13 @@ type PlatformString = PosixString
 #endif
 
 newtype WindowsChar = WindowsChar { getWindowsChar :: Word16 }
-  deriving (Eq, Ord, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Typeable, Generic, NFData, Lift)
 
 instance Show WindowsChar where
   show (WindowsChar wc) = show wc
 
 newtype PosixChar   = PosixChar { getPosixChar :: Word8 }
-  deriving (Eq, Ord, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Typeable, Generic, NFData, Lift)
 
 instance Show PosixChar where
   show (PosixChar pc) = show pc
@@ -206,7 +206,7 @@ instance Semigroup OsString where
 -- On Windows, this is restricted to two-octet codepoints 'Word16',
 -- on POSIX one-octet ('Word8').
 newtype OsChar = OsChar { getOsChar :: PlatformChar }
-  deriving (Typeable, Generic, NFData)
+  deriving (Typeable, Generic, NFData, Lift)
 
 instance Show OsChar where
   show (OsChar pc) = show pc
