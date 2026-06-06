@@ -15,7 +15,7 @@ jobs:
       matrix:
         # windows doesn't quite work yet
         os: [ubuntu-latest, macOS-15-intel, macOS-latest]
-        mhs: [0.15.0.0]
+        mhs: [0.16.0.0]
 
     steps:
 
