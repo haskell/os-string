@@ -49,6 +49,7 @@ import qualified System.OsString.Posix as PF
 import GHC.Stack (HasCallStack)
 import Data.Coerce (coerce)
 import Data.Type.Coercion (coerceWith)
+import Data.Word (Word8)
 
 
 
@@ -242,6 +243,9 @@ unpack = coerce PF.unpack
 -- Note that using this in conjunction with 'unsafeFromChar' to
 -- convert from @[Char]@ to 'OsString' is probably not what
 -- you want, because it will truncate unicode code points.
+--
+-- Additionally, 'OsChar' is a byte (or wide char on windows) in an encoded byte sequence,
+-- so we're not operating on unicode code points or graphemes here.
 pack :: [OsChar] -> OsString
 pack = coerce PF.pack
 
@@ -253,8 +257,24 @@ singleton = coerce PF.singleton
 
 
 -- | Truncates on unix to 1 and on Windows to 2 octets.
+--
+-- Note that 'OsChar' is a byte in an encoded byte sequence
+-- and is not morally a unicode code point by any means, so
+-- this conversion is rarely what you want.
+--
+-- Consider using 'fromWord' instead.
 unsafeFromChar :: Char -> OsChar
 unsafeFromChar = coerce PF.unsafeFromChar
+
+-- | Convert from 'Word8'.
+--
+-- @since 2.0.11
+fromWord :: Word8 -> OsChar
+#if defined(mingw32_HOST_OS) || defined(__MINGW32__)
+fromWord = OsChar . WindowsChar . fromIntegral
+#else
+fromWord = OsChar . PosixChar
+#endif
 
 -- | Converts back to a unicode codepoint (total).
 toChar :: OsChar -> Char

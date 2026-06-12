@@ -1,6 +1,6 @@
 cabal-version:      2.2
 name:               os-string
-version:            2.0.10
+version:            2.0.11
 
 -- NOTE: Don't forget to update ./changelog.md
 license:            BSD-3-Clause
@@ -16,14 +16,11 @@ category:           System
 build-type:         Simple
 synopsis:           Library for manipulating Operating system strings.
 tested-with:
-  GHC ==8.6.5
-   || ==8.8.4
-   || ==8.10.7
-   || ==9.0.2
-   || ==9.2.8
-   || ==9.4.8
-   || ==9.6.3
-   || ==9.8.1
+  GHC ==9.6.7
+   || ==9.8.4
+   || ==9.10.3
+   || ==9.12.4
+   || ==9.14.1
 
 description:
   This package provides functionality for manipulating @OsString@ values, and is shipped with <https://www.haskell.org/ghc/ GHC>.

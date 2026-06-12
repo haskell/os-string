@@ -57,6 +57,7 @@ module System.OsString.MODULE_NAME
 
   -- * Word construction
   , unsafeFromChar
+  , fromWord
 
   -- * Word deconstruction
   , toChar
@@ -210,6 +211,11 @@ import Data.Bifunctor ( bimap )
 import qualified System.OsString.Data.ByteString.Short.Word16 as BS16
 import qualified System.OsString.Data.ByteString.Short as BS8
 
+#ifdef WINDOWS
+import Data.Word (Word16)
+#else
+import Data.Word (Word8)
+#endif
 
 
 #ifdef WINDOWS_DOC
@@ -538,6 +544,9 @@ unpack = coerce BSP.unpack
 -- Note that using this in conjunction with 'unsafeFromChar' to
 -- convert from @[Char]@ to platform string is probably not what
 -- you want, because it will truncate unicode code points.
+--
+-- Additionally, a platform word is a byte (or wide char on windows) in an encoded byte sequence,
+-- so we're not operating on unicode code points or graphemes here.
 pack :: [PLATFORM_WORD] -> PLATFORM_STRING
 pack = coerce BSP.pack
 
@@ -547,13 +556,38 @@ singleton = coerce BSP.singleton
 empty :: PLATFORM_STRING
 empty = mempty
 
+#ifdef WINDOWS
+-- | Convert from 'Word16'.
+--
+-- @since 2.0.11
+fromWord :: Word16 -> PLATFORM_WORD
+fromWord = WindowsChar
+#else
+-- | Convert from 'Word8'.
+--
+-- @since 2.0.11
+fromWord :: Word8 -> PLATFORM_WORD
+fromWord = PosixChar
+#endif
 
 #ifdef WINDOWS
 -- | Truncates to 2 octets.
+--
+-- Note that 'WindowsChar' is a "wide char" in a UCS-2 encoded byte sequence
+-- and is not morally a unicode code point by any means, so
+-- this conversion is rarely what you want.
+--
+-- Consider using 'fromWord' instead.
 unsafeFromChar :: Char -> PLATFORM_WORD
 unsafeFromChar = WindowsChar . fromIntegral . fromEnum
 #else
 -- | Truncates to 1 octet.
+--
+-- Note that 'PosixChar' is a byte in an encoded byte sequence
+-- and is not morally a unicode code point by any means, so
+-- this conversion is rarely what you want.
+--
+-- Consider using 'fromWord' instead.
 unsafeFromChar :: Char -> PLATFORM_WORD
 unsafeFromChar = PosixChar . fromIntegral . fromEnum
 #endif

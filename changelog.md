@@ -1,5 +1,10 @@
 # Changelog for [`os-string` package](http://hackage.haskell.org/package/os-string)
 
+## 2.0.11 *Jun 2026*
+
+* Add Lift instance to `OsChar`, `PosixChar` and `WindowsChar`
+* Add `fromWord`
+
 ## 2.0.10 *Jan 2026*
 
 * fix build on GHC 9.14 wrt [#40](https://github.com/haskell/os-string/issues/40)

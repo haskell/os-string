@@ -114,14 +114,22 @@ type PlatformString = WindowsString
 type PlatformString = PosixString
 #endif
 
+-- | This represents a "wide char" on windows.
+--
+-- A better name would maybe have been @WindowsWord@, since
+-- this is just @Word16@ in a UCS-2 sequence.
 newtype WindowsChar = WindowsChar { getWindowsChar :: Word16 }
-  deriving (Eq, Ord, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Typeable, Generic, NFData, Lift)
 
 instance Show WindowsChar where
   show (WindowsChar wc) = show wc
 
+-- | This represents a byte.
+--
+-- A better name would maybe have been @PosixWord@, since
+-- it is just @Word8@ in an encoded byte sequence.
 newtype PosixChar   = PosixChar { getPosixChar :: Word8 }
-  deriving (Eq, Ord, Typeable, Generic, NFData)
+  deriving (Eq, Ord, Typeable, Generic, NFData, Lift)
 
 instance Show PosixChar where
   show (PosixChar pc) = show pc
@@ -205,8 +213,11 @@ instance Semigroup OsString where
 --
 -- On Windows, this is restricted to two-octet codepoints 'Word16',
 -- on POSIX one-octet ('Word8').
+--
+-- This should maybe have been worded @OsWord@, since it is not
+-- a unicode code point by any means. It represents a byte in a
 newtype OsChar = OsChar { getOsChar :: PlatformChar }
-  deriving (Typeable, Generic, NFData)
+  deriving (Typeable, Generic, NFData, Lift)
 
 instance Show OsChar where
   show (OsChar pc) = show pc
