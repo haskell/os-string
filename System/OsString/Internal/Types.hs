@@ -215,7 +215,9 @@ instance Semigroup OsString where
 -- on POSIX one-octet ('Word8').
 --
 -- This should maybe have been worded @OsWord@, since it is not
--- a unicode code point by any means. It represents a byte in a
+-- a unicode code point by any means.
+-- On unix, it represents a byte in an encoded byte sequence. On
+-- windows it represents a wide char in a UCS-2 encoded byte sequence.
 newtype OsChar = OsChar { getOsChar :: PlatformChar }
   deriving (Typeable, Generic, NFData, Lift)
 
